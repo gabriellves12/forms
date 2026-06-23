@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Proposta Comercial — Think Brand</title>
+<link rel="icon" href="./icon02.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="./tokens.css" />
+
+<!-- =========================================================
+     PROPOSTA COMERCIAL — Think Brand
+     Página dinâmica. Para cada cliente, edite apenas o bloco
+     PROPOSTA logo abaixo (no <script> no fim do arquivo) OU
+     passe ?cliente=Nome na URL.
+     ========================================================= -->
+
+<style>
+  /* ===== Reset ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  img, svg { display: block; max-width: 100%; }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
+
+  :focus-visible { outline: 2px solid var(--tb-neutral-400); outline-offset: 4px; border-radius: 4px; }
+
+  /* ===== Base ===== */
+  body {
+    font-family: var(--tb-font-family-primary);
+    font-weight: var(--tb-font-weight-regular);
+    color: var(--tb-text-primary);
+    background: var(--tb-surface-page);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
+
+  ::selection { background: var(--tb-brand-dark); color: #fff; }
+
+  /* ===== Layout helpers ===== */
+  .wrap { width: 100%; max-width: 1180px; margin-inline: auto; padding-inline: 32px; }
+  .section { padding-block: 120px; position: relative; }
+  @media (max-width: 720px) {
+    .wrap { padding-inline: 22px; }
+    .section { padding-block: 80px; }
+  }
+
+  /* Eyebrow / section label (editorial) */
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 12px;
+    font-size: 12px; font-weight: var(--tb-font-weight-semibold);
+    letter-spacing: 0.28em; text-transform: uppercase;
+    color: var(--tb-text-muted);
+  }
+  .eyebrow .idx { color: var(--tb-text-primary); }
+  .eyebrow::before {
+    content: ""; width: 28px; height: 1px; background: var(--tb-neutral-400);
+    display: inline-block;
+  }
+
+  /* Grain overlay (atmosfera sutil sobre seções dark) */
+  .grain::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    opacity: 0.05; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* =====================================================
+     HERO
+     ===================================================== */
+  .hero {
+    position: relative;
+    min-height: 100svh;
+    display: flex; flex-direction: column;
+    background: var(--tb-gradient-radial);
+    color: var(--tb-text-inverse);
+    overflow: hidden;
+  }
+  .hero__grid {
+    position: absolute; inset: 0; pointer-events: none; opacity: 0.5;
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,0.035) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.035) 1px, transparent 1px);
+    background-size: 78px 78px;
+    -webkit-mask-image: radial-gradient(circle at 70% 35%, #000 0%, transparent 75%);
+            mask-image: radial-gradient(circle at 70% 35%, #000 0%, transparent 75%);
+  }
+
+  .hero__top {
+    position: relative; z-index: 2;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 24px; padding-top: 38px;
+  }
+  .hero__logo { height: 26px; width: auto; opacity: 0.95; }
+  .hero__meta { text-align: right; font-size: 12.5px; letter-spacing: 0.04em; color: rgba(255,255,255,0.55); }
+  .hero__meta strong { display: block; color: rgba(255,255,255,0.9); font-weight: var(--tb-font-weight-medium); letter-spacing: 0.2em; text-transform: uppercase; font-size: 11px; margin-bottom: 4px; }
+
+  .hero__body {
+    position: relative; z-index: 2;
+    flex: 1; display: flex; flex-direction: column; justify-content: center;
+    padding-block: 60px;
+  }
+  .hero__greet {
+    font-size: clamp(15px, 2.2vw, 19px);
+    font-weight: var(--tb-font-weight-light);
+    color: rgba(255,255,255,0.62);
+    margin-bottom: 26px; letter-spacing: 0.01em;
+  }
+  .hero__greet b { color: #fff; font-weight: var(--tb-font-weight-medium); }
+  .hero__title {
+    font-size: clamp(46px, 9vw, 132px);
+    line-height: 0.92; letter-spacing: -0.035em;
+    font-weight: var(--tb-font-weight-medium);
+  }
+  .hero__title .thin { font-weight: var(--tb-font-weight-thin); display: block; }
+  .hero__title .black { font-weight: var(--tb-font-weight-black); }
+  .hero__sub {
+    margin-top: 38px; max-width: 540px;
+    font-size: clamp(15px, 1.5vw, 18px);
+    font-weight: var(--tb-font-weight-light);
+    color: rgba(255,255,255,0.7); line-height: 1.65;
+  }
+
+  .hero__scroll {
+    position: relative; z-index: 2;
+    display: flex; align-items: center; gap: 14px;
+    padding-bottom: 40px;
+    font-size: 11px; letter-spacing: 0.26em; text-transform: uppercase;
+    color: rgba(255,255,255,0.45);
+  }
+  .hero__scroll .line { width: 46px; height: 1px; background: rgba(255,255,255,0.4); transform-origin: left; animation: scrollLine 2.4s ease-in-out infinite; }
+  @keyframes scrollLine { 0%,100% { transform: scaleX(0.3); opacity: 0.4; } 50% { transform: scaleX(1); opacity: 1; } }
+
+  /* =====================================================
+     INTRO
+     ===================================================== */
+  .intro__lead {
+    font-size: clamp(26px, 3.6vw, 44px);
+    line-height: 1.25; letter-spacing: -0.02em;
+    font-weight: var(--tb-font-weight-light);
+    max-width: 940px; margin-top: 30px;
+  }
+  .intro__lead b { font-weight: var(--tb-font-weight-semibold); }
+  .intro__lead .muted { color: var(--tb-text-muted); }
+
+  /* =====================================================
+     SCOPE / generic dark+light sections
+     ===================================================== */
+  .head {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 30px; flex-wrap: wrap; margin-bottom: 64px;
+  }
+  .head__title {
+    font-size: clamp(30px, 4.4vw, 56px); line-height: 1.02;
+    letter-spacing: -0.03em; font-weight: var(--tb-font-weight-semibold);
+  }
+  .head__note { color: var(--tb-text-secondary); max-width: 360px; font-weight: var(--tb-font-weight-light); font-size: 15px; line-height: 1.6; }
+
+  .scope-list { border-top: 1px solid var(--tb-border-subtle); }
+  .scope-item {
+    display: grid; grid-template-columns: 120px 1fr; gap: 40px;
+    padding-block: 38px; border-bottom: 1px solid var(--tb-border-subtle);
+    align-items: start; transition: padding-left 0.5s cubic-bezier(.2,.7,.2,1);
+  }
+  .scope-item:hover { padding-left: 14px; }
+  .scope-item__num {
+    font-size: clamp(40px, 5vw, 64px); line-height: 0.85;
+    font-weight: var(--tb-font-weight-thin); color: var(--tb-neutral-300);
+    letter-spacing: -0.04em;
+  }
+  .scope-item:hover .scope-item__num { color: var(--tb-brand-dark); }
+  .scope-item__body h3 { font-size: clamp(19px, 2.2vw, 26px); font-weight: var(--tb-font-weight-medium); letter-spacing: -0.015em; margin-bottom: 10px; }
+  .scope-item__body p { color: var(--tb-text-secondary); font-weight: var(--tb-font-weight-light); max-width: 560px; font-size: 15.5px; line-height: 1.6; }
+  @media (max-width: 640px) {
+    .scope-item { grid-template-columns: 1fr; gap: 14px; padding-block: 30px; }
+    .scope-item__num { font-size: 44px; }
+  }
+
+  /* =====================================================
+     MELHORIAS — dark band
+     ===================================================== */
+  .band-dark { background: var(--tb-brand-dark); color: var(--tb-text-inverse); }
+  .band-dark .eyebrow { color: rgba(255,255,255,0.5); }
+  .band-dark .eyebrow .idx { color: #fff; }
+  .band-dark .eyebrow::before { background: rgba(255,255,255,0.4); }
+  .band-dark .head__title { color: #fff; }
+  .band-dark .head__note { color: rgba(255,255,255,0.6); }
+
+  .improve-list { display: grid; gap: 18px; }
+  .improve-item {
+    display: flex; gap: 22px; align-items: flex-start;
+    padding: 28px 30px; border: 1px solid rgba(255,255,255,0.12);
+    border-radius: var(--tb-radius-lg); background: rgba(255,255,255,0.025);
+    transition: border-color 0.4s ease, background 0.4s ease, transform 0.4s ease;
+  }
+  .improve-item:hover { border-color: rgba(255,255,255,0.35); background: rgba(255,255,255,0.05); transform: translateY(-2px); }
+  .improve-item__num { font-size: 13px; font-weight: var(--tb-font-weight-semibold); letter-spacing: 0.1em; color: rgba(255,255,255,0.45); padding-top: 4px; }
+  .improve-item__txt { font-size: clamp(17px, 1.9vw, 21px); font-weight: var(--tb-font-weight-light); line-height: 1.5; }
+
+  /* Diagnóstico visual (screenshot) dentro da faixa escura */
+  .evidence { margin-top: 44px; }
+  .evidence__frame {
+    border: 1px solid rgba(255,255,255,0.12); border-radius: var(--tb-radius-lg);
+    background: rgba(255,255,255,0.025); padding: 12px;
+    box-shadow: var(--tb-shadow-2xl); overflow: hidden;
+  }
+  .evidence__bar { display: flex; align-items: center; gap: 7px; padding: 8px 10px 14px; }
+  .evidence__bar i { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.18); display: inline-block; }
+  .evidence__img { width: 100%; height: auto; border-radius: var(--tb-radius-md); display: block; }
+  .evidence__cap {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    margin-top: 18px; font-size: 13.5px; color: rgba(255,255,255,0.55);
+    font-weight: var(--tb-font-weight-light); letter-spacing: 0.01em;
+  }
+  .evidence__cap b { color: rgba(255,255,255,0.9); font-weight: var(--tb-font-weight-medium); }
+  .evidence__cap .pill { font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; padding: 5px 12px; border-radius: var(--tb-radius-full); border: 1px solid rgba(255,255,255,0.18); color: rgba(255,255,255,0.8); }
+
+  /* =====================================================
+     PRAZO — big number
+     ===================================================== */
+  .deadline { display: flex; align-items: center; justify-content: space-between; gap: 50px; flex-wrap: wrap; }
+  .deadline__big {
+    font-size: clamp(110px, 22vw, 300px); line-height: 0.8;
+    font-weight: var(--tb-font-weight-black); letter-spacing: -0.05em;
+    background: var(--tb-gradient-dark); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    display: flex; align-items: baseline;
+  }
+  .deadline__unit { font-size: clamp(20px, 3vw, 40px); font-weight: var(--tb-font-weight-light); -webkit-text-fill-color: var(--tb-text-muted); margin-left: 14px; letter-spacing: 0; }
+  .deadline__note { max-width: 320px; color: var(--tb-text-secondary); font-weight: var(--tb-font-weight-light); font-size: 16px; line-height: 1.65; }
+
+  /* =====================================================
+     VALORES — pricing
+     ===================================================== */
+  .pricing { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 24px; }
+  @media (max-width: 860px) { .pricing { grid-template-columns: 1fr; } }
+
+  .price-card {
+    position: relative; overflow: hidden;
+    background: var(--tb-gradient-radial); color: #fff;
+    border-radius: var(--tb-radius-xl); padding: 54px 48px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    min-height: 360px;
+  }
+  .price-card__label { font-size: 12px; letter-spacing: 0.24em; text-transform: uppercase; color: rgba(255,255,255,0.55); }
+  .price-card__value { margin-top: 18px; font-size: clamp(48px, 7vw, 84px); font-weight: var(--tb-font-weight-bold); letter-spacing: -0.04em; line-height: 0.95; }
+  .price-card__value small { font-size: 0.42em; font-weight: var(--tb-font-weight-light); color: rgba(255,255,255,0.6); letter-spacing: 0; }
+  .price-card__sub { margin-top: 14px; color: rgba(255,255,255,0.65); font-weight: var(--tb-font-weight-light); font-size: 16px; }
+  .price-card__rows { margin-top: 36px; display: grid; gap: 1px; background: rgba(255,255,255,0.12); border-radius: var(--tb-radius-md); overflow: hidden; }
+  .price-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 22px; background: rgba(20,20,20,0.55); }
+  .price-row span:first-child { color: rgba(255,255,255,0.7); font-weight: var(--tb-font-weight-light); font-size: 14.5px; }
+  .price-row span:last-child { font-weight: var(--tb-font-weight-semibold); font-size: 15px; }
+
+  .pay-stack { display: grid; gap: 24px; align-content: start; }
+  .pay-card {
+    border: 1px solid var(--tb-border-subtle); border-radius: var(--tb-radius-lg);
+    padding: 32px 30px; background: var(--tb-surface-raised);
+    transition: box-shadow 0.4s ease, transform 0.4s ease, border-color 0.4s ease;
+  }
+  .pay-card:hover { box-shadow: var(--tb-shadow-lg); transform: translateY(-3px); border-color: var(--tb-border-strong); }
+  .pay-card__tag { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: var(--tb-font-weight-semibold); color: var(--tb-text-muted); margin-bottom: 16px; }
+  .pay-card.is-featured { background: var(--tb-brand-dark); color: #fff; border-color: var(--tb-brand-dark); }
+  .pay-card.is-featured .pay-card__tag { color: var(--tb-neutral-300); }
+  .pay-card.is-featured .pay-card__desc { color: rgba(255,255,255,0.7); }
+  .pay-card__title { font-size: 22px; font-weight: var(--tb-font-weight-semibold); letter-spacing: -0.015em; margin-bottom: 8px; }
+  .pay-card__title em { font-style: normal; font-weight: var(--tb-font-weight-black); }
+  .pay-card__desc { color: var(--tb-text-secondary); font-weight: var(--tb-font-weight-light); font-size: 15px; line-height: 1.6; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* =====================================================
+     OVERDELIVERY — highlight
+     ===================================================== */
+  .over {
+    position: relative; overflow: hidden;
+    border-radius: var(--tb-radius-xl);
+    border: 1px solid var(--tb-border-subtle);
+    background:
+      radial-gradient(circle at 88% 18%, rgba(12,12,12,0.05), transparent 55%),
+      var(--tb-surface-sunken);
+    padding: clamp(40px, 6vw, 76px);
+    display: flex; align-items: center; gap: 50px; flex-wrap: wrap;
+  }
+  .over__badge {
+    flex-shrink: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    width: 150px; height: 150px; border-radius: 50%;
+    background: var(--tb-gradient-dark); color: #fff;
+    box-shadow: var(--tb-shadow-xl);
+  }
+  .over__badge b { font-size: 56px; font-weight: var(--tb-font-weight-black); line-height: 1; letter-spacing: -0.04em; }
+  .over__badge span { font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: rgba(255,255,255,0.65); margin-top: 6px; }
+  .over__txt { flex: 1; min-width: 260px; }
+  .over__txt .tag { font-size: 12px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--tb-text-muted); font-weight: var(--tb-font-weight-semibold); }
+  .over__txt h3 { font-size: clamp(24px, 3.2vw, 40px); font-weight: var(--tb-font-weight-semibold); letter-spacing: -0.025em; margin: 14px 0 12px; }
+  .over__txt p { color: var(--tb-text-secondary); font-weight: var(--tb-font-weight-light); font-size: 16.5px; line-height: 1.6; max-width: 520px; }
+
+  /* =====================================================
+     PROJETOS
+     ===================================================== */
+  .projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
+  .project-card {
+    position: relative; display: flex; flex-direction: column; justify-content: space-between;
+    min-height: 220px; padding: 32px;
+    border: 1px solid var(--tb-border-subtle); border-radius: var(--tb-radius-lg);
+    background: var(--tb-surface-page); overflow: hidden;
+    transition: transform 0.45s cubic-bezier(.2,.7,.2,1), box-shadow 0.45s ease, border-color 0.45s ease;
+  }
+  .project-card::before {
+    content: ""; position: absolute; inset: 0; z-index: 0;
+    background: var(--tb-gradient-dark); opacity: 0;
+    transition: opacity 0.45s ease;
+  }
+  .project-card > * { position: relative; z-index: 1; transition: color 0.45s ease; }
+  .project-card:hover { transform: translateY(-6px); box-shadow: var(--tb-shadow-xl); border-color: var(--tb-brand-dark); }
+  .project-card:hover::before { opacity: 1; }
+  .project-card:hover, .project-card:hover .project-card__meta { color: #fff; }
+  .project-card:hover .project-card__meta { color: rgba(255,255,255,0.6); }
+  .project-card__meta { font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--tb-text-muted); font-weight: var(--tb-font-weight-semibold); }
+  .project-card__name { font-size: 26px; font-weight: var(--tb-font-weight-semibold); letter-spacing: -0.02em; margin-top: 12px; }
+  .project-card__arrow {
+    align-self: flex-end; margin-top: 28px; width: 46px; height: 46px; border-radius: 50%;
+    border: 1px solid var(--tb-border-strong); display: grid; place-items: center;
+    transition: border-color 0.45s ease, transform 0.45s ease;
+  }
+  .project-card:hover .project-card__arrow { border-color: rgba(255,255,255,0.5); transform: rotate(-45deg); }
+  .project-card__arrow svg { width: 18px; height: 18px; }
+
+  .projects-empty { color: var(--tb-text-muted); font-weight: var(--tb-font-weight-light); padding: 40px 0; }
+
+  /* =====================================================
+     FOOTER / CTA
+     ===================================================== */
+  .footer { background: var(--tb-brand-black); color: var(--tb-text-inverse); position: relative; overflow: hidden; }
+  .footer__cta { padding-block: clamp(70px, 10vw, 130px); border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .footer__cta h2 { font-size: clamp(34px, 6vw, 80px); line-height: 1.0; letter-spacing: -0.035em; font-weight: var(--tb-font-weight-medium); max-width: 14ch; }
+  .footer__cta h2 b { font-weight: var(--tb-font-weight-black); }
+  .footer__actions { margin-top: 44px; display: flex; gap: 16px; flex-wrap: wrap; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 12px;
+    padding: 17px 30px; border-radius: var(--tb-radius-full);
+    font-weight: var(--tb-font-weight-semibold); font-size: 15px; letter-spacing: 0.01em;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  }
+  .btn--light { background: #fff; color: var(--tb-brand-dark); }
+  .btn--light:hover { transform: translateY(-2px); box-shadow: 0 14px 34px rgba(0,0,0,0.4); }
+  .btn--ghost { border: 1px solid rgba(255,255,255,0.25); color: #fff; }
+  .btn--ghost:hover { border-color: #fff; transform: translateY(-2px); }
+  .btn svg { width: 17px; height: 17px; }
+
+  .footer__bottom { padding-block: 46px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+  .footer__logo { height: 24px; width: auto; opacity: 0.9; }
+  .footer__legal { font-size: 13px; color: rgba(255,255,255,0.4); letter-spacing: 0.02em; }
+  .footer__contact { display: flex; gap: 26px; flex-wrap: wrap; font-size: 14px; }
+  .footer__contact a { color: rgba(255,255,255,0.7); transition: color 0.3s ease; }
+  .footer__contact a:hover { color: #fff; }
+
+  /* =====================================================
+     Reveal on scroll
+     ===================================================== */
+  .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.9s cubic-bezier(.2,.7,.2,1), transform 0.9s cubic-bezier(.2,.7,.2,1); }
+  .reveal.is-in { opacity: 1; transform: none; }
+  .reveal[data-d="1"] { transition-delay: 0.08s; }
+  .reveal[data-d="2"] { transition-delay: 0.16s; }
+  .reveal[data-d="3"] { transition-delay: 0.24s; }
+  .reveal[data-d="4"] { transition-delay: 0.32s; }
+
+  /* Hero load-in */
+  .hero [data-anim] { opacity: 0; transform: translateY(24px); animation: heroIn 1s cubic-bezier(.2,.7,.2,1) forwards; }
+  .hero [data-anim="1"] { animation-delay: 0.15s; }
+  .hero [data-anim="2"] { animation-delay: 0.30s; }
+  .hero [data-anim="3"] { animation-delay: 0.45s; }
+  .hero [data-anim="4"] { animation-delay: 0.60s; }
+  .hero [data-anim="5"] { animation-delay: 0.78s; }
+  @keyframes heroIn { to { opacity: 1; transform: none; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+    .reveal { opacity: 1; transform: none; }
+    .hero [data-anim] { opacity: 1; transform: none; }
+    html { scroll-behavior: auto; }
+  }
+
+  /* ===== Print (cliente salva como PDF) ===== */
+  @media print {
+    .hero { min-height: auto; background: #fff; color: #000; }
+    .hero__grid, .grain::after, .hero__scroll { display: none; }
+    .band-dark, .footer { background: #fff !important; color: #000 !important; }
+    .price-card, .over__badge { background: #f2f2f2 !important; color: #000 !important; -webkit-print-color-adjust: exact; }
+    .section { padding-block: 40px; }
+    .reveal { opacity: 1 !important; transform: none !important; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- ================= HERO ================= -->
+  <header class="hero grain">
+    <div class="hero__grid"></div>
+    <div class="wrap hero__top">
+      <img class="hero__logo" src="./logo01.svg" alt="Think Brand" />
+      <div class="hero__meta">
+        <strong>Proposta</strong>
+        <span data-bind="propostaId"></span> · <span data-bind="data"></span>
+      </div>
+    </div>
+
+    <div class="wrap hero__body">
+      <p class="hero__greet" data-anim="1">Olá, <b data-bind="cliente">cliente</b>, tudo bem?</p>
+      <h1 class="hero__title">
+        <span class="thin" data-anim="2">Seja bem-vindo à</span>
+        <span class="black" data-anim="3" data-bind="marca">Think&nbsp;Brand.</span>
+      </h1>
+      <p class="hero__sub" data-anim="4" data-bind="intro"></p>
+    </div>
+
+    <div class="wrap hero__scroll" data-anim="5">
+      <span class="line"></span> Role para ver sua proposta
+    </div>
+  </header>
+
+  <main>
+    <!-- ================= ESCOPO ================= -->
+    <section class="section wrap" id="escopo">
+      <div class="head">
+        <div>
+          <span class="eyebrow reveal"><span class="idx">01</span> &nbsp;Escopo do projeto</span>
+          <h2 class="head__title reveal" data-d="1">O que será<br>entregue.</h2>
+        </div>
+        <p class="head__note reveal" data-d="2">Todo o escopo desenhado especificamente para o seu projeto, do conceito à entrega final.</p>
+      </div>
+      <div class="scope-list" data-list="escopo"></div>
+    </section>
+
+    <!-- ================= MELHORIAS ================= -->
+    <section class="band-dark grain" id="melhorias" style="position:relative">
+      <div class="section wrap">
+        <div class="head">
+          <div>
+            <span class="eyebrow reveal"><span class="idx">02</span> &nbsp;Pontos de melhoria</span>
+            <h2 class="head__title reveal" data-d="1">O que<br>identificamos.</h2>
+          </div>
+          <p class="head__note reveal" data-d="2">Diagnóstico do cenário atual — oportunidades claras de evolução que a proposta resolve.</p>
+        </div>
+        <div class="improve-list" data-list="melhorias"></div>
+
+        <figure class="evidence reveal" data-d="2">
+          <div class="evidence__frame">
+            <div class="evidence__bar"><i></i><i></i><i></i></div>
+            <img class="evidence__img" src="./diagnostico-performance.png"
+                 alt="Relatório de performance do site atual: índice de desempenho 39, LCP 23,9s, FCP 8,1s." loading="lazy" />
+          </div>
+          <figcaption class="evidence__cap">
+            <span class="pill">Diagnóstico</span>
+            <span><b>Análise de performance do site atual</b> — desempenho 39/100, carregamento (LCP) em 23,9s e FCP em 8,1s comprometem a experiência e a conversão.</span>
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- ================= PRAZO ================= -->
+    <section class="section wrap" id="prazo">
+      <span class="eyebrow reveal"><span class="idx">03</span> &nbsp;Prazo de entrega</span>
+      <div class="deadline" style="margin-top:40px">
+        <div class="deadline__big reveal" data-d="1">
+          <span data-bind="prazoNum">60</span>
+          <span class="deadline__unit" data-bind="prazoUnidade">dias</span>
+        </div>
+        <p class="deadline__note reveal" data-d="2" data-bind="prazoNota"></p>
+      </div>
+    </section>
+
+    <!-- ================= VALORES ================= -->
+    <section class="section wrap" id="valores">
+      <div class="head">
+        <div>
+          <span class="eyebrow reveal"><span class="idx">04</span> &nbsp;Investimento</span>
+          <h2 class="head__title reveal" data-d="1">Valores e<br>condições.</h2>
+        </div>
+        <p class="head__note reveal" data-d="2">Transparência total. Escolha a forma de pagamento que faz mais sentido para você.</p>
+      </div>
+
+      <div class="pricing">
+        <div class="price-card grain reveal" data-d="1">
+          <div>
+            <p class="price-card__label">Valor do projeto</p>
+            <p class="price-card__value"><small>R$&nbsp;</small><span data-bind="valorTotal">10.000</span></p>
+            <p class="price-card__sub" data-bind="valorSub"></p>
+          </div>
+          <div class="price-card__rows" data-list="condicoes"></div>
+        </div>
+
+        <div class="pay-stack">
+          <div class="pay-card is-featured reveal" data-d="2">
+            <span class="pay-card__tag"><span class="dot"></span> Melhor opção</span>
+            <h3 class="pay-card__title">Pix · <em data-bind="pixDesconto">10%</em> de desconto</h3>
+            <p class="pay-card__desc" data-bind="pixDesc"></p>
+          </div>
+          <div class="pay-card reveal" data-d="3">
+            <span class="pay-card__tag"><span class="dot"></span> Parcelado</span>
+            <h3 class="pay-card__title">Cartão de crédito</h3>
+            <p class="pay-card__desc" data-bind="cartaoDesc"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= OVERDELIVERY ================= -->
+    <section class="section wrap" id="overdelivery">
+      <div class="over grain reveal">
+        <div class="over__badge">
+          <b data-bind="overNum">2</b>
+          <span data-bind="overUnidade">meses</span>
+        </div>
+        <div class="over__txt">
+          <span class="tag">Overdelivery</span>
+          <h3 data-bind="overTitulo">Suporte e otimização inclusos</h3>
+          <p data-bind="overDesc"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PROJETOS ================= -->
+    <section class="section wrap" id="projetos">
+      <div class="head">
+        <div>
+          <span class="eyebrow reveal"><span class="idx">05</span> &nbsp;Portfólio</span>
+          <h2 class="head__title reveal" data-d="1">Conheça alguns<br>dos nossos projetos.</h2>
+        </div>
+        <p class="head__note reveal" data-d="2">Resultados reais que entregamos. Clique para explorar cada protótipo.</p>
+      </div>
+      <div class="projects-grid" data-list="projetos"></div>
+    </section>
+  </main>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="footer grain">
+    <div class="wrap footer__cta">
+      <h2 class="reveal">Vamos construir<br>algo <b>memorável?</b></h2>
+      <div class="footer__actions reveal" data-d="1">
+        <a class="btn btn--light" data-bind-href="ctaPrimarioHref" target="_blank" rel="noopener">
+          <span data-bind="ctaPrimario">Aceitar proposta</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        <a class="btn btn--ghost" data-bind-href="ctaSecundarioHref" target="_blank" rel="noopener">
+          <span data-bind="ctaSecundario">Tirar dúvidas</span>
+        </a>
+      </div>
+    </div>
+    <div class="wrap footer__bottom">
+      <img class="footer__logo" src="./logo01.svg" alt="Think Brand" />
+      <div class="footer__contact" data-list="contatos"></div>
+      <p class="footer__legal">© <span data-bind="ano">2026</span> Think Brand · Proposta confidencial</p>
+    </div>
+  </footer>
+
+<script>
+/* =========================================================
+   ⚙️  EDITE AQUI — uma proposta por cliente
+   ========================================================= */
+const PROPOSTA = {
+  cliente:     "OFT Group",           // pode ser sobrescrito por ?cliente=Fulano na URL
+  propostaId:  "Nº 001/2026",
+  data:        "10 Jun 2026",
+
+  intro: "Nesta proposta você encontra todo o escopo do seu projeto, valores, prazos e exemplos do nosso trabalho — tudo pensado sob medida para o seu negócio.",
+
+  // ===== 01 · Escopo =====
+  escopo: [
+    { titulo: "Site institucional focado em conversão",      desc: "Site institucional com X páginas, arquitetado para guiar o visitante até a ação." },
+    { titulo: "Protótipo de alta fidelidade",                desc: "Construção de toda a estrutura do protótipo de alta fidelidade, pronto para validação." },
+    { titulo: "Responsividade completa",                     desc: "Otimização e estruturação de toda a responsividade do site em qualquer dispositivo." },
+  ],
+
+  // ===== 02 · Pontos de melhoria =====
+  melhorias: [
+    { texto: "Identificamos problemas de otimização que comprometem performance e resultados." },
+  ],
+
+  // ===== 03 · Prazo =====
+  prazoNum:     "60",
+  prazoUnidade: "dias",
+  prazoNota:    "Prazo total estimado para a entrega completa do projeto, da concepção ao lançamento.",
+
+  // ===== 04 · Valores =====
+  valorTotal: "10.000,00",
+  valorSub:   "Investimento único, com condições flexíveis de pagamento.",
+  condicoes: [
+    { label: "À vista",     valor: "R$ 10.000,00" },
+    { label: "Parcelado",   valor: "6x de R$ 0.000,00" },
+  ],
+  pixDesconto: "10%",
+  pixDesc:     "Pagamento via Pix com 10% de desconto sobre o valor total do projeto.",
+  cartaoDesc:  "Parcele em até 6x no cartão de crédito, sem complicação.",
+
+  // ===== Overdelivery =====
+  overNum:     "2",
+  overUnidade: "meses",
+  overTitulo:  "Suporte e otimização inclusos",
+  overDesc:    "2 meses de suporte e otimização contínua após a entrega do projeto — sem custo adicional.",
+
+  // ===== 05 · Projetos (botões → Figma) =====
+  projetos: [
+    { nome: "Murillo Ferro",        meta: "Protótipo · Figma",  href: "https://www.figma.com/proto/8T26XzyRblST90J4vmmeBg/%F0%9F%94%B5--NEVEL-CLIENT--Murillo-Ferro---Projeto?node-id=475-552&p=f&viewport=209%2C179%2C0.14&t=TUSVVjj78f6LENHO-1&scaling=scale-down-width&content-scaling=fixed&page-id=475%3A551" },
+    { nome: "Ecommerce Objetivo",   meta: "Site no ar",         href: "https://ecommerceobjetivo.com.br/" },
+  ],
+
+  // ===== Rodapé / CTAs =====
+  ctaPrimario:      "Aceitar proposta",
+  ctaPrimarioHref:  "https://wa.me/5584998982543?text=" + encodeURIComponent("Olá! Sou da OFT Group e quero aceitar a proposta da Think Brand."),
+  ctaSecundario:    "Tirar dúvidas",
+  ctaSecundarioHref:"https://wa.me/5584998982543?text=" + encodeURIComponent("Olá! Sou da OFT Group e tenho algumas dúvidas sobre a proposta."),
+  contatos: [
+    { label: "contato@thinkbrand.com", href: "mailto:contato@thinkbrand.com" },
+    { label: "Instagram",              href: "https://instagram.com/" },
+    { label: "WhatsApp",               href: "https://wa.me/5584998982543" },
+  ],
+  ano: "2026",
+};
+
+/* =========================================================
+   ⬇️  Motor de renderização — não precisa editar abaixo
+   ========================================================= */
+(function () {
+  // ?cliente= na URL sobrescreve o nome (proposta dinâmica por link)
+  const params = new URLSearchParams(location.search);
+  const qpCliente = params.get("cliente") || params.get("c");
+  if (qpCliente) PROPOSTA.cliente = qpCliente.trim();
+
+  const esc = (s) => String(s).replace(/[&<>"']/g, m => (
+    { "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]
+  ));
+
+  // Bind de texto simples
+  document.querySelectorAll("[data-bind]").forEach(el => {
+    const key = el.getAttribute("data-bind");
+    if (PROPOSTA[key] != null) el.textContent = PROPOSTA[key];
+  });
+  // Bind de href
+  document.querySelectorAll("[data-bind-href]").forEach(el => {
+    const key = el.getAttribute("data-bind-href");
+    if (PROPOSTA[key]) el.setAttribute("href", PROPOSTA[key]);
+  });
+
+  // Título da aba personalizado
+  document.title = `Proposta — ${PROPOSTA.cliente} · Think Brand`;
+
+  // ---- Listas ----
+  const lists = {
+    escopo: (arr) => arr.map((it, i) => `
+      <div class="scope-item reveal" data-d="${Math.min(i+1,4)}">
+        <div class="scope-item__num">${String(i+1).padStart(2,"0")}</div>
+        <div class="scope-item__body">
+          <h3>${esc(it.titulo)}</h3>
+          <p>${esc(it.desc)}</p>
+        </div>
+      </div>`).join(""),
+
+    melhorias: (arr) => arr.map((it, i) => `
+      <div class="improve-item reveal" data-d="${Math.min(i+1,4)}">
+        <div class="improve-item__num">${String(i+1).padStart(2,"0")}</div>
+        <p class="improve-item__txt">${esc(it.texto)}</p>
+      </div>`).join(""),
+
+    condicoes: (arr) => arr.map(it => `
+      <div class="price-row"><span>${esc(it.label)}</span><span>${esc(it.valor)}</span></div>
+    `).join(""),
+
+    projetos: (arr) => arr.length ? arr.map((it, i) => `
+      <a class="project-card reveal" data-d="${Math.min(i+1,4)}" href="${esc(it.href||"#")}" target="_blank" rel="noopener">
+        <span class="project-card__meta">${esc(it.meta||"Projeto")}</span>
+        <span class="project-card__name">${esc(it.nome||"Sem título")}</span>
+        <span class="project-card__arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 17 17 7M9 7h8v8"/></svg>
+        </span>
+      </a>`).join("")
+      : `<p class="projects-empty">Em breve — adicione os links dos projetos do Figma no bloco <code>projetos</code>.</p>`,
+
+    contatos: (arr) => arr.map(it => `
+      <a href="${esc(it.href||"#")}" target="_blank" rel="noopener">${esc(it.label)}</a>
+    `).join(""),
+  };
+
+  Object.entries(lists).forEach(([key, render]) => {
+    const host = document.querySelector(`[data-list="${key}"]`);
+    if (host && Array.isArray(PROPOSTA[key])) host.innerHTML = render(PROPOSTA[key]);
+  });
+
+  // ---- Reveal on scroll ----
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add("is-in"); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
+  document.querySelectorAll(".reveal").forEach(el => io.observe(el));
+})();
+</script>
+</body>
+</html>

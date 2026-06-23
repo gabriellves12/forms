@@ -1,0 +1,167 @@
+/* =========================================================
+   thinkbrand — Design Tokens
+   Estilo: Moderna (monocromático)
+   Fonte:  Google Sans Flex 36pt (embarcada local)
+   ========================================================= */
+
+
+/* ---------- 1. Fontes (Google Sans Flex local) ---------- */
+
+@font-face {
+  font-family: 'Google Sans Flex';
+  src: url('./fonte/GoogleSansFlex_36pt-Thin.ttf') format('truetype');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Google Sans Flex';
+  src: url('./fonte/GoogleSansFlex_36pt-ExtraLight.ttf') format('truetype');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Google Sans Flex';
+  src: url('./fonte/GoogleSansFlex_36pt-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Google Sans Flex';
+  src: url('./fonte/GoogleSansFlex_36pt-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Google Sans Flex';
+  src: url('./fonte/GoogleSansFlex_36pt-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Google Sans Flex';
+  src: url('./fonte/GoogleSansFlex_36pt-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Google Sans Flex';
+  src: url('./fonte/GoogleSansFlex_36pt-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Google Sans Flex';
+  src: url('./fonte/GoogleSansFlex_36pt-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Google Sans Flex';
+  src: url('./fonte/GoogleSansFlex_36pt-Black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+
+/* ---------- 2. Tokens ---------- */
+
+:root {
+
+  /* ===== Cores da marca ===== */
+  --tb-brand-black:   #0C0C0C; /* preto absoluto — máxima profundidade, dark BGs */
+  --tb-brand-dark:    #181818; /* preto principal — texto, botões, logos */
+  --tb-brand-light:   #E1E1E1; /* cinza claro — texto em dark mode, BGs suaves */
+
+  /* ===== Primária (botões, CTAs, destaques) ===== */
+  --tb-color-primary:        #181818;
+  --tb-color-primary-hover:  #0C0C0C;
+  --tb-color-primary-light:  #2A2A2A; /* hover em superfícies escuras */
+  --tb-color-on-primary:     #FFFFFF; /* texto sobre primária */
+
+  /* ===== Secundária (acentos, ícones, fundos invertidos) ===== */
+  --tb-color-secondary:        #E1E1E1;
+  --tb-color-secondary-light:  #F5F5F5;
+  --tb-color-on-secondary:     #0C0C0C;
+
+  /* ===== Neutros (escala completa) ===== */
+  --tb-neutral-0:    #FFFFFF;
+  --tb-neutral-50:   #FAFAFA;
+  --tb-neutral-100:  #F5F5F5;
+  --tb-neutral-200:  #E1E1E1; /* cor da marca */
+  --tb-neutral-300:  #D4D4D4;
+  --tb-neutral-400:  #A3A3A3;
+  --tb-neutral-500:  #737373;
+  --tb-neutral-600:  #525252;
+  --tb-neutral-700:  #404040;
+  --tb-neutral-800:  #262626;
+  --tb-neutral-900:  #181818; /* cor da marca */
+  --tb-neutral-950:  #0C0C0C; /* cor da marca */
+
+  /* ===== Texto ===== */
+  --tb-text-primary:    #181818; /* texto principal sobre claro */
+  --tb-text-secondary:  #525252; /* texto auxiliar */
+  --tb-text-muted:      #A3A3A3; /* legendas, placeholders */
+  --tb-text-inverse:    #FAFAFA; /* texto sobre fundo escuro */
+
+  /* ===== Superfícies / Backgrounds ===== */
+  --tb-surface-page:     #FFFFFF;
+  --tb-surface-raised:   #FAFAFA;
+  --tb-surface-sunken:   #F5F5F5;
+  --tb-surface-dark:     #181818;
+  --tb-surface-darker:   #0C0C0C;
+
+  /* ===== Bordas ===== */
+  --tb-border-subtle:  #E1E1E1;
+  --tb-border-strong:  #D4D4D4;
+  --tb-border-dark:    #262626;
+
+  /* ===== Semânticas ===== */
+  --tb-color-success:  #10B981;
+  --tb-color-error:    #EF4444;
+  --tb-color-warning:  #F59E0B;
+  --tb-color-info:     #3B82F6;
+
+  /* ===== Tipografia — família e pesos ===== */
+  --tb-font-family-primary: 'Google Sans Flex', 'Google Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --tb-font-family-display: var(--tb-font-family-primary);
+
+  --tb-font-weight-thin:        100;
+  --tb-font-weight-extralight:  200;
+  --tb-font-weight-light:       300;
+  --tb-font-weight-regular:     400;
+  --tb-font-weight-medium:      500;
+  --tb-font-weight-semibold:    600;
+  --tb-font-weight-bold:        700;
+  --tb-font-weight-extrabold:   800;
+  --tb-font-weight-black:       900;
+
+  /* ===== Border radius (estilo Moderna — arredondado) ===== */
+  --tb-radius-sm:    8px;
+  --tb-radius-md:    12px;
+  --tb-radius-lg:    20px;
+  --tb-radius-xl:    28px;
+  --tb-radius-full:  9999px;
+
+  /* ===== Sombras (com profundidade) ===== */
+  --tb-shadow-xs:   0 1px 2px rgba(12, 12, 12, 0.04);
+  --tb-shadow-sm:   0 2px 4px rgba(12, 12, 12, 0.06);
+  --tb-shadow-md:   0 4px 12px rgba(12, 12, 12, 0.08);
+  --tb-shadow-lg:   0 10px 30px rgba(12, 12, 12, 0.12);
+  --tb-shadow-xl:   0 20px 50px rgba(12, 12, 12, 0.18);
+  --tb-shadow-2xl:  0 30px 80px rgba(12, 12, 12, 0.25);
+
+  /* ===== Gradientes (monocromáticos — bem-vindos no estilo Moderna) ===== */
+  --tb-gradient-dark:    linear-gradient(135deg, #181818 0%, #0C0C0C 100%);
+  --tb-gradient-light:   linear-gradient(135deg, #FAFAFA 0%, #E1E1E1 100%);
+  --tb-gradient-fade:    linear-gradient(180deg, rgba(12, 12, 12, 0) 0%, #0C0C0C 100%);
+  --tb-gradient-radial:  radial-gradient(circle at top right, #2A2A2A 0%, #0C0C0C 70%);
+}

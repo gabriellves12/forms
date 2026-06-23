@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Briefing de Identidade Visual — Think Brand</title>
+<link rel="icon" href="./icon02.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="./tokens.css" />
+<style>
+  /* ===== Reset ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  button { font: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
+  input, textarea { font: inherit; color: inherit; }
+
+  /* Outline customizado — cinza claro no foco */
+  button:focus { outline: none; }
+  button:focus-visible,
+  a.btn:focus-visible {
+    outline: 2px solid var(--tb-neutral-300);
+    outline-offset: 4px;
+  }
+
+  /* ===== Base ===== */
+  body {
+    font-family: var(--tb-font-family-primary);
+    font-weight: var(--tb-font-weight-regular);
+    color: var(--tb-text-primary);
+    background: var(--tb-surface-page);
+    background-image: radial-gradient(circle at top right, #F5F5F5 0%, #FFFFFF 60%);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* ===== Progress bar ===== */
+  .progress {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: 4px;
+    background: var(--tb-neutral-100);
+    z-index: 50;
+  }
+  .progress__fill {
+    height: 100%;
+    background: var(--tb-color-primary);
+    width: 0%;
+    transition: width 400ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* ===== Topbar (logo) ===== */
+  .topbar {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 40;
+    display: flex; align-items: center; gap: 12px;
+    opacity: 0.85;
+  }
+  .topbar img { height: 22px; width: auto; }
+
+  /* ===== Layout ===== */
+  .app {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 32px;
+  }
+  .stage {
+    width: 100%;
+    max-width: 720px;
+    position: relative;
+  }
+  .step {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 320ms cubic-bezier(0.22, 1, 0.36, 1),
+                transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .step.leaving { opacity: 0; transform: translateY(-16px); }
+  .step.entering { opacity: 0; transform: translateY(16px); }
+
+  /* ===== Welcome ===== */
+  .welcome { text-align: left; }
+  .welcome__brand {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 40px;
+  }
+  .welcome__brand img { height: 32px; }
+  .welcome__eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 13px;
+    font-weight: var(--tb-font-weight-medium);
+    color: var(--tb-text-secondary);
+    margin-bottom: 16px;
+  }
+  .welcome__title {
+    font-size: clamp(40px, 6vw, 64px);
+    font-weight: var(--tb-font-weight-bold);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 24px;
+  }
+  .welcome__title em { font-style: normal; color: var(--tb-text-secondary); }
+  .welcome__desc {
+    font-size: 18px;
+    line-height: 1.55;
+    color: var(--tb-text-secondary);
+    max-width: 580px;
+    margin-bottom: 48px;
+  }
+  .welcome__meta {
+    display: flex; gap: 24px; flex-wrap: wrap;
+    margin-bottom: 48px;
+    font-size: 14px;
+    color: var(--tb-text-muted);
+  }
+  .welcome__meta strong { color: var(--tb-text-primary); font-weight: var(--tb-font-weight-semibold); }
+
+  /* ===== Question ===== */
+  .q__num {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 14px;
+    font-weight: var(--tb-font-weight-medium);
+    color: var(--tb-text-muted);
+    margin-bottom: 20px;
+  }
+  .q__num svg { width: 14px; height: 14px; }
+  .q__title {
+    font-size: clamp(24px, 3.6vw, 36px);
+    font-weight: var(--tb-font-weight-semibold);
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    margin-bottom: 12px;
+  }
+  .q__hint {
+    font-size: 15px;
+    color: var(--tb-text-muted);
+    margin-bottom: 32px;
+  }
+  .q__error {
+    margin-top: 16px;
+    font-size: 14px;
+    color: var(--tb-color-error);
+    font-weight: var(--tb-font-weight-medium);
+    display: none;
+  }
+  .q__error.show { display: block; }
+
+  /* ===== Inputs ===== */
+  .input {
+    width: 100%;
+    padding: 14px 4px;
+    font-size: 22px;
+    font-weight: var(--tb-font-weight-regular);
+    background: transparent;
+    border: 0;
+    border-bottom: 2px solid var(--tb-border-strong);
+    outline: 0;
+    color: var(--tb-text-primary);
+    transition: border-color 200ms ease-out;
+  }
+  .input::placeholder { color: var(--tb-text-muted); font-weight: var(--tb-font-weight-light); }
+  .input:focus { border-bottom-color: var(--tb-color-primary); }
+
+  .textarea {
+    min-height: 140px;
+    font-size: 18px;
+    line-height: 1.5;
+    resize: vertical;
+    padding: 14px 16px;
+    border: 2px solid var(--tb-border-strong);
+    border-radius: var(--tb-radius-md);
+    background: var(--tb-neutral-50);
+    transition: border-color 200ms ease-out, background 200ms ease-out;
+  }
+  .textarea:focus { border-color: var(--tb-color-primary); background: var(--tb-neutral-0); }
+
+  /* ===== Choices ===== */
+  .choices {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .choice {
+    display: flex; align-items: center; gap: 16px;
+    width: 100%;
+    padding: 18px 20px;
+    text-align: left;
+    background: var(--tb-neutral-0);
+    border: 2px solid var(--tb-border-strong);
+    border-radius: var(--tb-radius-md);
+    font-size: 17px;
+    font-weight: var(--tb-font-weight-medium);
+    transition: all 180ms ease-out;
+  }
+  .choice:hover {
+    border-color: var(--tb-color-primary);
+    transform: translateX(4px);
+  }
+  .choice__key {
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1.5px solid var(--tb-border-strong);
+    border-radius: var(--tb-radius-sm);
+    font-size: 13px;
+    font-weight: var(--tb-font-weight-semibold);
+    color: var(--tb-text-secondary);
+    transition: all 180ms ease-out;
+    flex-shrink: 0;
+  }
+  .choice__label { flex: 1; }
+  .choice__check {
+    width: 22px; height: 22px;
+    border-radius: var(--tb-radius-full);
+    background: var(--tb-color-primary);
+    color: var(--tb-color-on-primary);
+    display: none;
+    align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .choice.selected {
+    border-color: var(--tb-color-primary);
+    background: var(--tb-neutral-50);
+  }
+  .choice.selected .choice__key {
+    background: var(--tb-color-primary);
+    color: var(--tb-color-on-primary);
+    border-color: var(--tb-color-primary);
+  }
+  .choice.selected .choice__check { display: flex; }
+  .choice.disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+
+  .choice--other {
+    flex-direction: column; align-items: stretch; gap: 12px;
+  }
+  .choice--other .choice__top { display: flex; align-items: center; gap: 16px; }
+  .choice--other input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid var(--tb-border-strong);
+    border-radius: var(--tb-radius-sm);
+    font-size: 15px;
+    background: var(--tb-neutral-50);
+    outline: 0;
+    transition: border-color 200ms ease-out;
+  }
+  .choice--other input:focus { border-color: var(--tb-color-primary); background: var(--tb-neutral-0); }
+
+  /* ===== Multi brands (3 inputs) ===== */
+  .brands { display: grid; gap: 14px; margin-bottom: 24px; }
+  .brand-row { display: flex; align-items: center; gap: 14px; }
+  .brand-row__num {
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: var(--tb-radius-full);
+    background: var(--tb-neutral-100);
+    color: var(--tb-text-secondary);
+    font-size: 13px;
+    font-weight: var(--tb-font-weight-semibold);
+    flex-shrink: 0;
+  }
+  .brand-row input {
+    flex: 1;
+    padding: 12px 16px;
+    font-size: 16px;
+    border: 2px solid var(--tb-border-strong);
+    border-radius: var(--tb-radius-md);
+    background: var(--tb-neutral-50);
+    outline: 0;
+    transition: border-color 200ms ease-out, background 200ms ease-out;
+  }
+  .brand-row input:focus { border-color: var(--tb-color-primary); background: var(--tb-neutral-0); }
+
+  /* ===== Buttons ===== */
+  .actions {
+    display: flex; align-items: center; gap: 16px;
+    margin-top: 16px;
+  }
+  .btn {
+    display: inline-flex; align-items: center;
+    font-size: 15px;
+    font-weight: var(--tb-font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    transition: all 500ms ease;
+  }
+  .btn--primary {
+    position: relative;
+    border-radius: 400px;
+    padding: 22px 70px 22px 35px;
+    background: linear-gradient(90deg, #181818 0%, #0C0C0C 100%);
+    color: #fff;
+    box-shadow: 0 10px 30px rgba(12, 12, 12, 0.2);
+    overflow: hidden;
+    transition: all 500ms ease;
+  }
+  .btn--primary:hover:not(:disabled) {
+    box-shadow: 0 14px 40px rgba(12, 12, 12, 0.3);
+    transform: translateY(-2px);
+  }
+  .btn--primary:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; transform: none; }
+  .btn--large { padding: 26px 80px 26px 40px; font-size: 16px; }
+
+  .btn__icon {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
+    background: #fff;
+    border-radius: 400px;
+    padding: 8px;
+    width: 32px;
+    height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 500ms ease;
+    color: #181818;
+    overflow: hidden;
+  }
+  .btn__icon svg { width: 14px; height: 14px; flex-shrink: 0; }
+  .btn__icon svg path,
+  .btn__icon svg line,
+  .btn__icon svg polyline { stroke: #181818; transition: all 500ms ease; }
+  .btn__icon svg path { fill: #181818; }
+  .btn--primary:hover:not(:disabled) .btn__icon { width: calc(100% - 40px); }
+
+  .btn--large .btn__icon { width: 40px; height: 40px; right: 18px; }
+  .btn--large .btn__icon svg { width: 16px; height: 16px; }
+
+  .btn__hint {
+    font-size: 13px;
+    color: var(--tb-text-muted);
+    font-weight: var(--tb-font-weight-regular);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .btn__hint kbd {
+    display: inline-block;
+    padding: 2px 6px;
+    margin: 0 2px;
+    border-radius: 4px;
+    background: var(--tb-neutral-100);
+    border: 1px solid var(--tb-border-strong);
+    font-size: 11px;
+    font-family: ui-monospace, monospace;
+    color: var(--tb-text-secondary);
+  }
+
+  /* ===== Footer nav (arrows) ===== */
+  .nav {
+    position: fixed;
+    bottom: 24px; right: 32px;
+    display: flex; gap: 8px;
+    z-index: 40;
+  }
+  .nav__btn {
+    width: 44px; height: 44px;
+    border-radius: var(--tb-radius-md);
+    background: var(--tb-color-primary);
+    color: var(--tb-color-on-primary);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--tb-shadow-md);
+    transition: all 180ms ease-out;
+  }
+  .nav__btn:hover:not(:disabled) {
+    background: var(--tb-color-primary-hover);
+    box-shadow: var(--tb-shadow-lg);
+  }
+  .nav__btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .nav__btn svg { width: 18px; height: 18px; }
+  .nav__counter {
+    position: fixed;
+    bottom: 36px; left: 32px;
+    z-index: 40;
+    font-size: 13px;
+    color: var(--tb-text-muted);
+    font-weight: var(--tb-font-weight-medium);
+  }
+  .nav__counter strong { color: var(--tb-text-primary); }
+
+  /* ===== Loading ===== */
+  .loading {
+    text-align: center;
+  }
+  .loading__spinner {
+    width: 48px; height: 48px;
+    border: 3px solid var(--tb-neutral-200);
+    border-top-color: var(--tb-color-primary);
+    border-radius: var(--tb-radius-full);
+    animation: spin 800ms linear infinite;
+    margin: 0 auto 24px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading__text {
+    font-size: 18px;
+    color: var(--tb-text-secondary);
+  }
+
+  /* ===== Final ===== */
+  .final {
+    text-align: center;
+  }
+  .final__check {
+    width: 80px; height: 80px;
+    margin: 0 auto 32px;
+    background: linear-gradient(135deg, #181818 0%, #0C0C0C 100%);
+    color: #fff;
+    border-radius: var(--tb-radius-full);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 10px 30px rgba(12, 12, 12, 0.25);
+    animation: pop 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes pop {
+    0% { transform: scale(0); }
+    100% { transform: scale(1); }
+  }
+  .final__title {
+    font-size: clamp(32px, 5vw, 48px);
+    font-weight: var(--tb-font-weight-bold);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    margin-bottom: 20px;
+  }
+  .final__desc {
+    font-size: 18px;
+    line-height: 1.55;
+    color: var(--tb-text-secondary);
+    max-width: 520px;
+    margin: 0 auto 40px;
+  }
+  /* Botão final reaproveita .btn--primary (gradiente roxo) */
+
+  /* ===== Error state (submit fail) ===== */
+  .submit-error {
+    margin-top: 24px;
+    padding: 16px 20px;
+    background: #FEF2F2;
+    border: 1.5px solid var(--tb-color-error);
+    border-radius: var(--tb-radius-md);
+    color: var(--tb-color-error);
+    font-size: 14px;
+    line-height: 1.5;
+    display: none;
+  }
+  .submit-error.show { display: block; }
+
+  /* ===== Mobile ===== */
+  @media (max-width: 640px) {
+    .topbar { top: 16px; left: 20px; }
+    .topbar img { height: 18px; }
+    .app { padding: 60px 20px 100px; }
+    .nav { bottom: 16px; right: 20px; }
+    .nav__counter { bottom: 28px; left: 20px; }
+    .input { font-size: 18px; }
+    .choices { gap: 10px; }
+    .choice { padding: 14px 16px; font-size: 15px; }
+    .actions { flex-direction: column; align-items: stretch; }
+    .actions .btn { justify-content: center; }
+    .btn__hint { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress" aria-hidden="true">
+  <div class="progress__fill" id="progressFill"></div>
+</div>
+
+<div class="topbar" id="topbar" style="display:none;">
+  <img src="./logo02.svg" alt="thinkbrand" />
+</div>
+
+<main class="app">
+  <div class="stage">
+    <div class="step" id="step"></div>
+  </div>
+</main>
+
+<div class="nav__counter" id="counter" style="display:none;"></div>
+<div class="nav" id="nav" style="display:none;">
+  <button class="nav__btn" id="navPrev" aria-label="Pergunta anterior">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+  </button>
+  <button class="nav__btn" id="navNext" aria-label="Próxima pergunta">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+  </button>
+</div>
+
+<script>
+// =====================================================
+// CONFIG — TROQUE PELOS SEUS VALORES
+// =====================================================
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfSUbxEW5BtdxWH-mu6tiyfJY6LQotMVJ1TeITP15IcL4aOFr8NGH9TH_-Gdb2u8QWfw/exec';
+const WHATSAPP_NUMBER = '5584998982543'; // DDI+DDD+número, só dígitos
+const WHATSAPP_MESSAGE = 'Olá! Acabei de preencher o briefing de identidade visual da Think Brand e gostaria de dar continuidade ao meu projeto.';
+
+// =====================================================
+// SCHEMA DAS PERGUNTAS
+// =====================================================
+const QUESTIONS = [
+  { id: 'cliente_nome', type: 'text', title: 'Qual é o seu nome?', hint: 'Vamos usar pra te chamar pelo nome durante o processo.', placeholder: 'Digite seu nome completo', required: true },
+  { id: 'produto_nome', type: 'text', title: 'Qual é o nome do produto ou empresa?', placeholder: 'Ex: Café Aurora', required: true },
+  { id: 'nome_significado', type: 'textarea', title: 'Por que o produto tem esse nome?', hint: 'Conta o que ele significa pro negócio e a história por trás.', placeholder: 'Escreva aqui...', required: true },
+  { id: 'descricao_produto', type: 'textarea', title: 'Descreva o produto.', hint: 'Funcionalidades, entregáveis, o que ele faz na prática.', placeholder: 'O que o produto faz, o que entrega...', required: true },
+  { id: 'diferencial', type: 'textarea', title: 'O que diferencia o produto dos demais no mercado?', placeholder: 'Por que escolher esse e não o concorrente?', required: true },
+  { id: 'slogan', type: 'text', title: 'O produto possui slogan?', hint: 'Se sim, qual é. Se ainda não tem, deixe em branco.', placeholder: 'Ex: "Pense diferente."', required: false },
+  { id: 'concorrentes', type: 'textarea', title: 'O produto possui concorrentes?', hint: 'Se sim, cite quais. Se ainda não identificou, deixe em branco.', placeholder: 'Cite os principais concorrentes...', required: false },
+  { id: 'concorrentes_oferecem', type: 'textarea', title: 'O que os concorrentes oferecem que vocês ainda não oferecem?', placeholder: 'Pode listar serviços, features, benefícios...', required: false },
+  { id: 'publico_alvo', type: 'textarea', title: 'Quem é o público-alvo do produto?', hint: 'Descreva de forma geral antes das opções específicas.', placeholder: 'Para quem o produto é feito?', required: true },
+  { id: 'classe_social', type: 'single', title: 'Qual a classe social do público?', options: ['Classe C', 'Classe média', 'Rico', 'Muito rico'], required: true },
+  { id: 'faixa_etaria', type: 'single', title: 'Qual a faixa etária do público?', options: ['Jovens até 25 anos', 'Adultos até 35 anos', 'Quarentão pra cima', 'Todas as faixas'], required: true },
+  { id: 'genero', type: 'single', title: 'Qual o gênero do público?', options: ['Masculino', 'Feminino', 'Ambos'], required: true },
+  { id: 'clientes_quem', type: 'textarea', title: 'Descreva quem são seus clientes.', hint: 'Personalidade, hábitos, dores, sonhos — o que vier à mente.', placeholder: 'Conta com suas palavras...', required: true },
+  { id: 'como_descrito', type: 'textarea', title: 'Como você gostaria que seu produto fosse descrito pelos clientes finais?', hint: 'Imagine um cliente recomendando seu produto: o que ele diria?', placeholder: '"Esse produto é..."', required: true },
+  { id: 'caracteristicas', type: 'multi-other', title: 'Quais características o produto deve transmitir?', hint: 'Selecione todas que se aplicam.', options: ['Moderno', 'Exclusivo', 'Determinado', 'Profissional', 'Refinado', 'Acessível', 'Confiável', 'Inovador'], allowOther: true, required: true, min: 1 },
+  { id: 'caracteristicas_top3', type: 'multi-from-prev', title: 'Das características escolhidas, quais são as 3 mais importantes?', hint: 'Escolha até 3 — em ordem de importância não importa.', sourceId: 'caracteristicas', max: 3, min: 1, required: true },
+  { id: 'caracteristicas_nao', type: 'textarea', title: 'Quais características o produto NÃO deve transmitir?', placeholder: 'Ex: "infantil", "frio", "antiquado"...', required: false },
+  { id: 'cor_obrigatoria', type: 'textarea', title: 'Existe alguma cor que DEVE estar presente na marca?', hint: 'Pode citar HEX, nome ou referência (ex: "o azul da Nubank").', placeholder: 'Ex: azul royal, #0066FF...', required: false },
+  { id: 'cor_proibida', type: 'textarea', title: 'Existe alguma cor que NÃO deve estar presente na marca?', placeholder: 'Cores que você não quer ver na identidade...', required: false },
+  { id: 'elemento_desejado', type: 'textarea', title: 'Existe algum elemento gráfico desejado na marca?', hint: 'Pode ser um símbolo, ícone, forma ou referência visual.', placeholder: 'Ex: um leão, uma estrela, formas geométricas...', required: false },
+  { id: 'elemento_proibido', type: 'textarea', title: 'Existe algum elemento gráfico que NÃO deve estar presente?', placeholder: 'O que evitar...', required: false },
+  { id: 'marcas_admiradas', type: 'brands', title: 'Cite até 3 marcas cuja identidade visual você admira.', hint: 'Pode ser do mesmo segmento ou completamente diferente.', required: false }
+];
+
+// =====================================================
+// STATE
+// =====================================================
+const state = {
+  step: 'welcome',      // 'welcome' | 'question' | 'submitting' | 'final' | 'error'
+  index: 0,             // índice da pergunta atual
+  answers: {},          // { questionId: value }
+};
+
+const $step = document.getElementById('step');
+const $progressFill = document.getElementById('progressFill');
+const $counter = document.getElementById('counter');
+const $nav = document.getElementById('nav');
+const $navPrev = document.getElementById('navPrev');
+const $navNext = document.getElementById('navNext');
+const $topbar = document.getElementById('topbar');
+
+// =====================================================
+// RENDER
+// =====================================================
+function render() {
+  if (state.step === 'welcome') return renderWelcome();
+  if (state.step === 'question') return renderQuestion();
+  if (state.step === 'submitting') return renderSubmitting();
+  if (state.step === 'final') return renderFinal();
+  if (state.step === 'error') return renderError();
+}
+
+function transition(html) {
+  $step.classList.add('leaving');
+  setTimeout(() => {
+    $step.innerHTML = html;
+    $step.classList.remove('leaving');
+    $step.classList.add('entering');
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      $step.classList.remove('entering');
+    }));
+    afterRender();
+  }, 280);
+}
+
+function afterRender() {
+  // Autofocus
+  const first = $step.querySelector('[data-autofocus]');
+  if (first) setTimeout(() => first.focus(), 50);
+}
+
+function updateProgress() {
+  let pct = 0;
+  if (state.step === 'welcome') pct = 0;
+  else if (state.step === 'question') pct = ((state.index + 1) / QUESTIONS.length) * 100;
+  else if (state.step === 'submitting' || state.step === 'final' || state.step === 'error') pct = 100;
+  $progressFill.style.width = pct + '%';
+
+  const showNav = state.step === 'question';
+  $nav.style.display = showNav ? 'flex' : 'none';
+  $counter.style.display = showNav ? 'block' : 'none';
+  $topbar.style.display = state.step === 'welcome' ? 'none' : 'flex';
+
+  if (showNav) {
+    $counter.innerHTML = `<strong>${state.index + 1}</strong> de ${QUESTIONS.length}`;
+    $navPrev.disabled = state.index === 0;
+    $navNext.disabled = false;
+  }
+}
+
+function renderWelcome() {
+  const html = `
+    <div class="welcome">
+      <div class="welcome__brand">
+        <img src="./logo02.svg" alt="thinkbrand" />
+      </div>
+      <div class="welcome__eyebrow">Briefing · Think Brand</div>
+      <h1 class="welcome__title">Vamos construir a identidade visual <em>do seu negócio.</em></h1>
+      <p class="welcome__desc">Esse formulário é o ponto de partida do seu projeto de marca e brandbook na Think Brand. São 22 perguntas rápidas sobre o produto, o público e a estética que você quer transmitir. Suas respostas viram a base para toda a construção visual.</p>
+      <div class="welcome__meta">
+        <span><strong>±10 min</strong> · tempo médio</span>
+        <span><strong>22 perguntas</strong> · uma por vez</span>
+        <span><strong>Sem cadastro</strong></span>
+      </div>
+      <div class="actions">
+        <button class="btn btn--primary btn--large" id="startBtn" data-autofocus>
+          Começar
+          <span class="btn__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </span>
+        </button>
+        <span class="btn__hint">ou aperte <kbd>Enter</kbd></span>
+      </div>
+    </div>
+  `;
+  transition(html);
+  updateProgress();
+  setTimeout(() => {
+    const btn = document.getElementById('startBtn');
+    if (btn) btn.addEventListener('click', startQuestionnaire);
+  }, 320);
+}
+
+function startQuestionnaire() {
+  state.step = 'question';
+  state.index = 0;
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = QUESTIONS[state.index];
+  let bodyHtml = '';
+
+  if (q.type === 'text') {
+    const val = state.answers[q.id] || '';
+    bodyHtml = `<input type="text" class="input" id="qInput" placeholder="${escapeAttr(q.placeholder || '')}" value="${escapeAttr(val)}" data-autofocus />`;
+  } else if (q.type === 'textarea') {
+    const val = state.answers[q.id] || '';
+    bodyHtml = `<textarea class="input textarea" id="qInput" placeholder="${escapeAttr(q.placeholder || '')}" data-autofocus>${escapeHtml(val)}</textarea>`;
+  } else if (q.type === 'single') {
+    const selected = state.answers[q.id];
+    bodyHtml = '<div class="choices">';
+    q.options.forEach((opt, i) => {
+      const isSel = selected === opt;
+      bodyHtml += `
+        <button class="choice ${isSel ? 'selected' : ''}" data-choice="${escapeAttr(opt)}">
+          <span class="choice__key">${letterKey(i)}</span>
+          <span class="choice__label">${escapeHtml(opt)}</span>
+          <span class="choice__check"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+        </button>`;
+    });
+    bodyHtml += '</div>';
+  } else if (q.type === 'multi-other') {
+    const selected = state.answers[q.id] || [];
+    const otherVal = state.answers[q.id + '__other'] || '';
+    bodyHtml = '<div class="choices">';
+    q.options.forEach((opt, i) => {
+      const isSel = selected.includes(opt);
+      bodyHtml += `
+        <button class="choice ${isSel ? 'selected' : ''}" data-multi="${escapeAttr(opt)}">
+          <span class="choice__key">${letterKey(i)}</span>
+          <span class="choice__label">${escapeHtml(opt)}</span>
+          <span class="choice__check"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+        </button>`;
+    });
+    if (q.allowOther) {
+      const otherSel = selected.includes('__other__');
+      bodyHtml += `
+        <div class="choice choice--other ${otherSel ? 'selected' : ''}" data-other-wrapper>
+          <div class="choice__top">
+            <span class="choice__key">${letterKey(q.options.length)}</span>
+            <span class="choice__label">Outro</span>
+            <span class="choice__check"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+          </div>
+          <input type="text" id="otherInput" placeholder="Escreva a característica..." value="${escapeAttr(otherVal)}" />
+        </div>`;
+    }
+    bodyHtml += '</div>';
+  } else if (q.type === 'multi-from-prev') {
+    const source = state.answers[q.sourceId] || [];
+    const otherTxt = state.answers[q.sourceId + '__other'];
+    const allOptions = source.filter(s => s !== '__other__').slice();
+    if (source.includes('__other__') && otherTxt) allOptions.push(otherTxt);
+
+    if (allOptions.length === 0) {
+      bodyHtml = `<p class="q__hint" style="font-size:16px;color:var(--tb-color-error);">Volte para a pergunta anterior e escolha pelo menos uma característica.</p>`;
+    } else {
+      const selected = state.answers[q.id] || [];
+      bodyHtml = `<p class="q__hint" id="multiCounter" style="margin-top:-16px;margin-bottom:24px;font-weight:var(--tb-font-weight-medium);"><span id="multiCount">${selected.length}</span> / ${q.max} selecionadas</p>`;
+      bodyHtml += '<div class="choices" id="multiChoices">';
+      allOptions.forEach((opt, i) => {
+        const isSel = selected.includes(opt);
+        const reachedMax = selected.length >= q.max && !isSel;
+        bodyHtml += `
+          <button class="choice ${isSel ? 'selected' : ''} ${reachedMax ? 'disabled' : ''}" data-multi="${escapeAttr(opt)}">
+            <span class="choice__key">${letterKey(i)}</span>
+            <span class="choice__label">${escapeHtml(opt)}</span>
+            <span class="choice__check"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+          </button>`;
+      });
+      bodyHtml += '</div>';
+    }
+  } else if (q.type === 'brands') {
+    const vals = state.answers[q.id] || ['', '', ''];
+    bodyHtml = `
+      <div class="brands">
+        <div class="brand-row"><span class="brand-row__num">1</span><input type="text" id="brand0" placeholder="Marca 1" value="${escapeAttr(vals[0] || '')}" data-autofocus /></div>
+        <div class="brand-row"><span class="brand-row__num">2</span><input type="text" id="brand1" placeholder="Marca 2 (opcional)" value="${escapeAttr(vals[1] || '')}" /></div>
+        <div class="brand-row"><span class="brand-row__num">3</span><input type="text" id="brand2" placeholder="Marca 3 (opcional)" value="${escapeAttr(vals[2] || '')}" /></div>
+      </div>
+    `;
+  }
+
+  const isLast = state.index === QUESTIONS.length - 1;
+  const nextLabel = isLast ? 'Enviar respostas' : 'Próxima';
+  const requiredMark = q.required ? '<span style="color:var(--tb-color-error)"> *</span>' : '';
+
+  const html = `
+    <div class="q__num">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      Pergunta ${state.index + 1}
+    </div>
+    <h2 class="q__title">${escapeHtml(q.title)}${requiredMark}</h2>
+    ${q.hint ? `<p class="q__hint">${escapeHtml(q.hint)}</p>` : ''}
+    ${bodyHtml}
+    <div class="q__error" id="qError"></div>
+    <div class="actions">
+      <button class="btn btn--primary" id="nextBtn">
+        ${nextLabel}
+        <span class="btn__icon">
+          ${isLast
+            ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+            : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>'}
+        </span>
+      </button>
+      <span class="btn__hint">aperte <kbd>Enter</kbd></span>
+    </div>
+  `;
+
+  transition(html);
+  updateProgress();
+  setTimeout(() => attachQuestionHandlers(q), 320);
+}
+
+function attachQuestionHandlers(q) {
+  const nextBtn = document.getElementById('nextBtn');
+  if (nextBtn) nextBtn.addEventListener('click', handleNext);
+
+  if (q.type === 'single') {
+    $step.querySelectorAll('[data-choice]').forEach(el => {
+      el.addEventListener('click', () => {
+        const val = el.dataset.choice;
+        state.answers[q.id] = val;
+        $step.querySelectorAll('[data-choice]').forEach(x => x.classList.toggle('selected', x.dataset.choice === val));
+        // auto-advance shortly after
+        setTimeout(handleNext, 200);
+      });
+    });
+  } else if (q.type === 'multi-other') {
+    $step.querySelectorAll('[data-multi]').forEach(el => {
+      el.addEventListener('click', () => {
+        const val = el.dataset.multi;
+        const arr = state.answers[q.id] || [];
+        const idx = arr.indexOf(val);
+        if (idx >= 0) arr.splice(idx, 1); else arr.push(val);
+        state.answers[q.id] = arr;
+        el.classList.toggle('selected');
+      });
+    });
+    const otherWrap = $step.querySelector('[data-other-wrapper]');
+    if (otherWrap) {
+      const otherInput = document.getElementById('otherInput');
+      const toggleOther = (e) => {
+        if (e.target.tagName === 'INPUT') return; // não toggle ao clicar no input
+        const arr = state.answers[q.id] || [];
+        const idx = arr.indexOf('__other__');
+        if (idx >= 0) arr.splice(idx, 1); else arr.push('__other__');
+        state.answers[q.id] = arr;
+        otherWrap.classList.toggle('selected');
+        if (otherWrap.classList.contains('selected')) otherInput.focus();
+      };
+      otherWrap.addEventListener('click', toggleOther);
+      otherInput.addEventListener('input', (e) => {
+        state.answers[q.id + '__other'] = e.target.value;
+      });
+      otherInput.addEventListener('focus', () => {
+        const arr = state.answers[q.id] || [];
+        if (!arr.includes('__other__')) {
+          arr.push('__other__');
+          state.answers[q.id] = arr;
+          otherWrap.classList.add('selected');
+        }
+      });
+    }
+  } else if (q.type === 'multi-from-prev') {
+    const updateMultiUI = () => {
+      const arr = state.answers[q.id] || [];
+      const counter = document.getElementById('multiCount');
+      if (counter) counter.textContent = arr.length;
+      $step.querySelectorAll('[data-multi]').forEach(el => {
+        const v = el.dataset.multi;
+        const isSel = arr.includes(v);
+        el.classList.toggle('selected', isSel);
+        el.classList.toggle('disabled', !isSel && arr.length >= q.max);
+      });
+    };
+    $step.querySelectorAll('[data-multi]').forEach(el => {
+      el.addEventListener('click', () => {
+        if (el.classList.contains('disabled')) return;
+        const val = el.dataset.multi;
+        const arr = state.answers[q.id] || [];
+        const idx = arr.indexOf(val);
+        if (idx >= 0) arr.splice(idx, 1); else if (arr.length < q.max) arr.push(val);
+        state.answers[q.id] = arr;
+        updateMultiUI();
+      });
+    });
+  } else if (q.type === 'brands') {
+    [0, 1, 2].forEach(i => {
+      const inp = document.getElementById('brand' + i);
+      if (inp) inp.addEventListener('input', () => {
+        const cur = state.answers[q.id] || ['', '', ''];
+        cur[i] = inp.value;
+        state.answers[q.id] = cur;
+      });
+    });
+  } else { // text / textarea
+    const inp = document.getElementById('qInput');
+    if (inp) inp.addEventListener('input', () => {
+      state.answers[q.id] = inp.value;
+    });
+  }
+}
+
+function handleNext() {
+  const q = QUESTIONS[state.index];
+
+  // save input values from DOM in case event listeners missed
+  if (q.type === 'text' || q.type === 'textarea') {
+    const inp = document.getElementById('qInput');
+    if (inp) state.answers[q.id] = inp.value;
+  } else if (q.type === 'brands') {
+    const cur = state.answers[q.id] || ['', '', ''];
+    [0, 1, 2].forEach(i => {
+      const inp = document.getElementById('brand' + i);
+      if (inp) cur[i] = inp.value;
+    });
+    state.answers[q.id] = cur;
+  } else if (q.type === 'multi-other') {
+    const otherInput = document.getElementById('otherInput');
+    if (otherInput) state.answers[q.id + '__other'] = otherInput.value;
+  }
+
+  // validate
+  const err = validate(q);
+  if (err) {
+    const $err = document.getElementById('qError');
+    if ($err) {
+      $err.textContent = err;
+      $err.classList.add('show');
+    }
+    return;
+  }
+
+  // advance
+  if (state.index < QUESTIONS.length - 1) {
+    state.index++;
+    renderQuestion();
+  } else {
+    submitForm();
+  }
+}
+
+function handlePrev() {
+  if (state.step !== 'question' || state.index === 0) return;
+  state.index--;
+  renderQuestion();
+}
+
+function validate(q) {
+  if (!q.required) return null;
+  const v = state.answers[q.id];
+  if (q.type === 'text' || q.type === 'textarea') {
+    if (!v || !v.trim()) return 'Esse campo é obrigatório.';
+  } else if (q.type === 'single') {
+    if (!v) return 'Escolha uma opção pra continuar.';
+  } else if (q.type === 'multi-other' || q.type === 'multi-from-prev') {
+    const arr = (v || []).filter(x => x !== '__other__' || (state.answers[q.id + '__other'] || '').trim());
+    if (q.min && arr.length < q.min) return `Selecione pelo menos ${q.min} opção${q.min > 1 ? 'ões' : ''}.`;
+  } else if (q.type === 'brands') {
+    const arr = (v || []).filter(x => (x || '').trim());
+    if (arr.length === 0) return 'Cite pelo menos uma marca.';
+  }
+  return null;
+}
+
+// =====================================================
+// SUBMIT
+// =====================================================
+function buildPayload() {
+  const payload = { timestamp: new Date().toISOString() };
+  QUESTIONS.forEach(q => {
+    const v = state.answers[q.id];
+    if (q.type === 'multi-other') {
+      const arr = (v || []).map(x => x === '__other__' ? (state.answers[q.id + '__other'] || '') : x).filter(Boolean);
+      payload[q.id] = arr.join('; ');
+    } else if (q.type === 'multi-from-prev') {
+      payload[q.id] = (v || []).join('; ');
+    } else if (q.type === 'brands') {
+      payload[q.id] = (v || []).filter(x => (x || '').trim()).join('; ');
+    } else {
+      payload[q.id] = v || '';
+    }
+  });
+  return payload;
+}
+
+async function submitForm() {
+  state.step = 'submitting';
+  renderSubmitting();
+
+  const payload = buildPayload();
+
+  try {
+    if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.startsWith('COLE_AQUI')) {
+      console.warn('APPS_SCRIPT_URL não configurada. Payload:', payload);
+      // simula sucesso pra teste local
+      await new Promise(r => setTimeout(r, 1200));
+    } else {
+      await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors', // Apps Script Web App não envia CORS headers
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload),
+      });
+    }
+    state.step = 'final';
+    renderFinal();
+  } catch (e) {
+    console.error(e);
+    state.step = 'error';
+    renderError(e.message);
+  }
+}
+
+function renderSubmitting() {
+  const html = `
+    <div class="loading">
+      <div class="loading__spinner"></div>
+      <p class="loading__text">Enviando suas respostas...</p>
+    </div>
+  `;
+  transition(html);
+  updateProgress();
+}
+
+function renderFinal() {
+  const nome = (state.answers.cliente_nome || '').trim().split(' ')[0] || 'amigo(a)';
+  const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`;
+  const html = `
+    <div class="final">
+      <div class="final__check">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h1 class="final__title">Valeu, ${escapeHtml(nome)}! 🎯</h1>
+      <p class="final__desc">Suas respostas chegaram aqui certinhas. Nossa equipe vai analisar tudo e em breve entra em contato com você pelo WhatsApp pra dar continuidade ao seu projeto de identidade visual.</p>
+      <a href="${waUrl}" target="_blank" rel="noopener" class="btn btn--primary btn--large">
+        Falar com a Think Brand
+        <span class="btn__icon">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+        </span>
+      </a>
+    </div>
+  `;
+  transition(html);
+  updateProgress();
+}
+
+function renderError(msg) {
+  const html = `
+    <div class="welcome">
+      <div class="welcome__eyebrow" style="color:var(--tb-color-error)">Algo deu errado</div>
+      <h1 class="welcome__title">Não conseguimos enviar suas respostas.</h1>
+      <p class="welcome__desc">Verifique sua conexão e tente novamente. Se persistir, entre em contato direto pelo WhatsApp.</p>
+      <p class="submit-error show" style="max-width:520px;">Detalhe técnico: ${escapeHtml(msg || 'erro desconhecido')}</p>
+      <div class="actions" style="margin-top:32px;">
+        <button class="btn btn--primary" id="retryBtn">
+          Tentar de novo
+          <span class="btn__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          </span>
+        </button>
+      </div>
+    </div>
+  `;
+  transition(html);
+  updateProgress();
+  setTimeout(() => {
+    const btn = document.getElementById('retryBtn');
+    if (btn) btn.addEventListener('click', submitForm);
+  }, 320);
+}
+
+// =====================================================
+// HELPERS
+// =====================================================
+function letterKey(i) {
+  return String.fromCharCode(65 + i); // A, B, C...
+}
+function escapeHtml(str) {
+  return String(str || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(str) {
+  return escapeHtml(str);
+}
+
+// =====================================================
+// GLOBAL EVENTS
+// =====================================================
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    // não avança se estiver dentro de textarea (permitir quebra de linha com Shift+Enter já é padrão)
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'textarea' && !e.metaKey && !e.ctrlKey) return;
+    e.preventDefault();
+    if (state.step === 'welcome') startQuestionnaire();
+    else if (state.step === 'question') handleNext();
+  }
+  if (e.key === 'Escape' && state.step === 'question') {
+    handlePrev();
+  }
+});
+
+$navPrev.addEventListener('click', handlePrev);
+$navNext.addEventListener('click', handleNext);
+
+// =====================================================
+// INIT
+// =====================================================
+renderWelcome();
+</script>
+</body>
+</html>
