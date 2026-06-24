@@ -101,3 +101,62 @@ export async function deleteBriefingDraft(id: string): Promise<{ success: boolea
   if (error) return { success: false, error: error.message };
   return { success: true };
 }
+
+export async function getBriefingDraft(id: string): Promise<
+  | {
+      success: true;
+      draft: {
+        id: string;
+        client_label: string | null;
+        notes: string | null;
+        questions: QuestionPayload[];
+      };
+    }
+  | { success: false; error: string }
+> {
+  const supabase = createServerSupabase();
+  const { data, error } = await supabase
+    .from('briefing_drafts')
+    .select('id, client_label, notes, questions')
+    .eq('id', id)
+    .maybeSingle();
+  if (error || !data) return { success: false, error: error?.message ?? 'Draft não encontrado.' };
+  return {
+    success: true,
+    draft: {
+      id: data.id,
+      client_label: data.client_label,
+      notes: data.notes,
+      questions: Array.isArray(data.questions) ? (data.questions as QuestionPayload[]) : [],
+    },
+  };
+}
+
+export async function updateBriefingDraft(input: {
+  id: string;
+  clientLabel?: string | null;
+  notes?: string | null;
+  questions: QuestionPayload[];
+}): Promise<{ success: boolean; error?: string }> {
+  const supabase = createServerSupabase();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Não autenticado.' };
+
+  if (!input.questions || input.questions.length === 0) {
+    return { success: false, error: 'O briefing precisa ter pelo menos uma pergunta.' };
+  }
+
+  const { error } = await supabase
+    .from('briefing_drafts')
+    .update({
+      client_label: input.clientLabel ?? null,
+      notes: input.notes ?? null,
+      questions: input.questions.map((q, i) => ({ ...q, position: i })),
+    })
+    .eq('id', input.id);
+
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}

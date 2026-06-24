@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { deleteBriefingDraft } from '@/app/(admin)/drafts/actions';
+import EditBriefingDraftModal from './EditBriefingDraftModal';
 
 export interface DraftRowData {
   id: string;
@@ -16,8 +17,14 @@ export default function DraftRow({ d }: { d: DraftRowData }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [copied, setCopied] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const muted = { color: 'var(--tb-text-muted)' };
   const stop = (e: React.MouseEvent) => e.stopPropagation();
+
+  const onEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditOpen(true);
+  };
 
   const sharePath = d.share_slug ? `/${d.share_slug}` : `/b/${d.share_token}`;
   const fullUrl =
@@ -49,36 +56,52 @@ export default function DraftRow({ d }: { d: DraftRowData }) {
   };
 
   return (
-    <tr onClick={onRowClick} title="Ver detalhes do briefing aguardando">
-      <td>{d.client_label || <span style={muted}>—</span>}</td>
-      <td><span style={muted}>—</span></td>
-      <td>
-        <span className="admin-badge admin-badge--waiting">Aguardando</span>
-      </td>
-      <td>{new Date(d.created_at).toLocaleString('pt-BR')}</td>
-      <td className="row-actions" onClick={stop}>
-        <div className="row-actions__group">
-          <button
-            type="button"
-            className="row-action"
-            onClick={onCopy}
-            title="Copiar link do cliente"
-            aria-label="Copiar link"
-          >
-            {copied ? 'Copiado!' : 'Copiar link'}
-          </button>
-          <button
-            type="button"
-            className="row-action row-action--danger"
-            onClick={onDelete}
-            disabled={pending}
-            title="Excluir briefing aguardando"
-            aria-label="Excluir"
-          >
-            {pending ? '...' : 'Excluir'}
-          </button>
-        </div>
-      </td>
-    </tr>
+    <>
+      <tr onClick={onRowClick} title="Ver detalhes do briefing aguardando">
+        <td>{d.client_label || <span style={muted}>—</span>}</td>
+        <td><span style={muted}>—</span></td>
+        <td>
+          <span className="admin-badge admin-badge--waiting">Aguardando</span>
+        </td>
+        <td>{new Date(d.created_at).toLocaleString('pt-BR')}</td>
+        <td className="row-actions" onClick={stop}>
+          <div className="row-actions__group">
+            <button
+              type="button"
+              className="row-action"
+              onClick={onEdit}
+              title="Editar perguntas do briefing"
+              aria-label="Editar"
+            >
+              Editar
+            </button>
+            <button
+              type="button"
+              className="row-action"
+              onClick={onCopy}
+              title="Copiar link do cliente"
+              aria-label="Copiar link"
+            >
+              {copied ? 'Copiado!' : 'Copiar link'}
+            </button>
+            <button
+              type="button"
+              className="row-action row-action--danger"
+              onClick={onDelete}
+              disabled={pending}
+              title="Excluir briefing aguardando"
+              aria-label="Excluir"
+            >
+              {pending ? '...' : 'Excluir'}
+            </button>
+          </div>
+        </td>
+      </tr>
+      <EditBriefingDraftModal
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        draftId={d.id}
+      />
+    </>
   );
 }
