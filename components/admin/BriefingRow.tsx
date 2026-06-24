@@ -5,6 +5,7 @@ import { useTransition } from 'react';
 import { deleteBriefingInline } from '@/app/(admin)/actions';
 
 const STATUS_LABEL: Record<string, string> = {
+  in_progress: 'Em andamento',
   new: 'Novo',
   seen: 'Visto',
   archived: 'Arquivado',

@@ -6,6 +6,7 @@ import { updateBriefingStatus, deleteBriefing, markBriefingAsSeen } from './acti
 export const dynamic = 'force-dynamic';
 
 const STATUS_LABEL: Record<string, string> = {
+  in_progress: 'Em andamento',
   new: 'Novo',
   seen: 'Visto',
   archived: 'Arquivado',
@@ -58,10 +59,11 @@ export default async function BriefingDetailPage({ params }: { params: { id: str
       ? questions.map((q) => ({ key: q.question_key, title: q.title }))
       : Array.from(answerMap.entries()).map(([key, v]) => ({ key, title: v.title }));
 
-  // Auto-marca como visto (se ainda 'new')
+  // Auto-marca como visto (apenas para briefings finalizados ainda 'new')
   if (briefing.status === 'new') {
     await markBriefingAsSeen(briefing.id);
   }
+  // Para in_progress, não muda status — o cliente ainda pode estar preenchendo.
 
   return (
     <>
@@ -80,6 +82,7 @@ export default async function BriefingDetailPage({ params }: { params: { id: str
           </h1>
           <p className="admin-subtitle">
             {briefing.product_name && `${briefing.product_name} · `}
+            {briefing.status === 'in_progress' ? 'Iniciado em ' : ''}
             {new Date(briefing.submitted_at).toLocaleString('pt-BR')}
           </p>
         </div>

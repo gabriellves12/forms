@@ -23,7 +23,7 @@ export default function Sidebar({ email }: { email: string }) {
   return (
     <aside className="admin-side">
       <div className="admin-side__brand">
-        Think Brand
+        <img src="/logo02.svg" alt="Think Brand" className="admin-side__brand-logo" />
         <small>Painel de briefings</small>
       </div>
 
