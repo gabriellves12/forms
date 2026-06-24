@@ -53,6 +53,17 @@ export default async function AdminHome({ searchParams }: { searchParams: Search
           <h1 className="admin-title">Histórico de briefings</h1>
           <p className="admin-subtitle">Todas as respostas recebidas, separadas por categoria.</p>
         </div>
+        {activeCat && (
+          <Link
+            href={`/${activeCat.slug}`}
+            target="_blank"
+            rel="noopener"
+            className="admin-btn admin-btn--primary"
+          >
+            <span aria-hidden style={{ fontSize: 16, lineHeight: 1 }}>＋</span>
+            Novo briefing de {activeCat.name}
+          </Link>
+        )}
       </header>
 
       <div className="admin-tabs">
@@ -69,7 +80,21 @@ export default async function AdminHome({ searchParams }: { searchParams: Search
       </div>
 
       {briefings.length === 0 ? (
-        <div className="admin-empty">Nenhum briefing nessa categoria ainda.</div>
+        <div className="admin-empty">
+          <p>Nenhum briefing nessa categoria ainda.</p>
+          {activeCat && (
+            <Link
+              href={`/${activeCat.slug}`}
+              target="_blank"
+              rel="noopener"
+              className="admin-btn admin-btn--primary"
+              style={{ marginTop: 16 }}
+            >
+              <span aria-hidden style={{ fontSize: 16, lineHeight: 1 }}>＋</span>
+              Iniciar um briefing de {activeCat.name}
+            </Link>
+          )}
+        </div>
       ) : (
         <table className="admin-table">
           <thead>
@@ -78,6 +103,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Search
               <th>Produto / Empresa</th>
               <th>Status</th>
               <th>Recebido em</th>
+              <th style={{ width: 220, textAlign: 'right' }}>Ações</th>
             </tr>
           </thead>
           <tbody>

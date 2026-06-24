@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { LoadedTemplate } from '@/lib/templates/loader';
-import type { QuestionDef } from '@/lib/templates/types';
+import type { QuestionDef, QuestionType } from '@/lib/templates/types';
 import { submitBriefing } from '@/app/(public)/[slug]/actions';
 import { ArrowRight, Check, ChevronDown, ChevronUp, Retry, WhatsAppIcon } from './icons';
 import '@/styles/form.css';
@@ -10,6 +10,13 @@ import '@/styles/form.css';
 type Step = 'welcome' | 'question' | 'submitting' | 'final' | 'error';
 type AnswerValue = string | string[] | undefined;
 type Answers = Record<string, AnswerValue>;
+
+interface CustomizationPatch {
+  title?: string;
+  required?: boolean;
+  removed?: boolean;
+}
+type Customizations = Record<string, CustomizationPatch>;
 
 interface Props {
   template: LoadedTemplate;
@@ -23,33 +30,56 @@ function getList(value: AnswerValue): string[] {
   return Array.isArray(value) ? value : [];
 }
 
+function newQuestionId() {
+  return `q_custom_${Math.random().toString(36).slice(2, 9)}`;
+}
+
 export default function BriefingForm({ template, whatsappNumber, whatsappMessage }: Props) {
   const [step, setStep] = useState<Step>('welcome');
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Answers>({});
+  const [customizations, setCustomizations] = useState<Customizations>({});
+  const [customQuestions, setCustomQuestions] = useState<QuestionDef[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [showAddPanel, setShowAddPanel] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
   const stepRef = useRef<HTMLDivElement>(null);
 
-  const questions = template.questions;
-  const total = questions.length;
-  const current = questions[index];
+  // --------------------------------------------------------- Effective questions
+  const questions = useMemo<QuestionDef[]>(() => {
+    const merged: QuestionDef[] = [...template.questions, ...customQuestions];
+    return merged
+      .map((q) => {
+        const c = customizations[q.id];
+        if (!c) return q;
+        return {
+          ...q,
+          title: c.title ?? q.title,
+          required: c.required ?? q.required,
+        };
+      })
+      .filter((q) => !customizations[q.id]?.removed);
+  }, [template.questions, customQuestions, customizations]);
 
-  // ----------------------------------------------------------- Progress
+  const total = questions.length;
+  const current = questions[Math.min(index, total - 1)];
+
+  // --------------------------------------------------------- Progress
   const progressPct = useMemo(() => {
     if (step === 'welcome') return 0;
-    if (step === 'question') return ((index + 1) / total) * 100;
+    if (step === 'question') return ((index + 1) / Math.max(1, total)) * 100;
     return 100;
   }, [step, index, total]);
 
-  // ----------------------------------------------------------- Navigation
+  // --------------------------------------------------------- Navigation
   const transition = useCallback((fn: () => void) => {
     setLeaving(true);
     setTimeout(() => {
       fn();
       setLeaving(false);
-    }, 280);
+    }, 240);
   }, []);
 
   const startQuestionnaire = useCallback(() => {
@@ -67,8 +97,8 @@ export default function BriefingForm({ template, whatsappNumber, whatsappMessage
     } else if (q.type === 'single') {
       if (!v) return 'Escolha uma opção pra continuar.';
     } else if (q.type === 'multi' || q.type === 'multi-other' || q.type === 'multi-from-prev') {
-      const arr = getList(v).filter((x) =>
-        x !== '__other__' || ((answers[q.id + '__other'] as string) || '').trim()
+      const arr = getList(v).filter(
+        (x) => x !== '__other__' || ((answers[q.id + '__other'] as string) || '').trim()
       );
       const min = q.config?.min ?? 1;
       if (arr.length < min) {
@@ -82,28 +112,32 @@ export default function BriefingForm({ template, whatsappNumber, whatsappMessage
   };
 
   const goNext = useCallback(() => {
-    const q = questions[index];
-    const err = validate(q);
+    if (!current) return;
+    const err = validate(current);
     if (err) {
       setError(err);
       return;
     }
     setError(null);
+    setEditingId(null);
+    setShowAddPanel(false);
     if (index < total - 1) {
       transition(() => setIndex(index + 1));
     } else {
       handleSubmit();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index, total, answers, questions, transition]);
+  }, [current, index, total, answers, transition]);
 
   const goPrev = useCallback(() => {
     if (step !== 'question' || index === 0) return;
     setError(null);
+    setEditingId(null);
+    setShowAddPanel(false);
     transition(() => setIndex(index - 1));
   }, [step, index, transition]);
 
-  // ----------------------------------------------------------- Submit
+  // --------------------------------------------------------- Submit
   const handleSubmit = async () => {
     transition(() => setStep('submitting'));
     try {
@@ -126,12 +160,17 @@ export default function BriefingForm({ template, whatsappNumber, whatsappMessage
     }
   };
 
-  // ----------------------------------------------------------- Keyboard
+  // --------------------------------------------------------- Keyboard
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName?.toLowerCase();
+      const inField = tag === 'input' || tag === 'textarea';
+      // Don't hijack Enter while user is editing question title or adding new
+      if (editingId || showAddPanel) return;
       if (e.key === 'Enter') {
         if (tag === 'textarea' && !e.metaKey && !e.ctrlKey) return;
+        if (inField && (target as HTMLElement).dataset.skipEnter === 'true') return;
         e.preventDefault();
         if (step === 'welcome') startQuestionnaire();
         else if (step === 'question') goNext();
@@ -141,20 +180,19 @@ export default function BriefingForm({ template, whatsappNumber, whatsappMessage
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [step, goNext, goPrev, startQuestionnaire]);
+  }, [step, goNext, goPrev, startQuestionnaire, editingId, showAddPanel]);
 
-  // body class pra trazer o background suave
   useEffect(() => {
     document.body.classList.add('form-body');
     return () => document.body.classList.remove('form-body');
   }, []);
 
-  // ----------------------------------------------------------- Setters
+  // --------------------------------------------------------- Setters
   const setText = (id: string, value: string) =>
     setAnswers((a) => ({ ...a, [id]: value }));
   const setSingle = (id: string, value: string) => {
     setAnswers((a) => ({ ...a, [id]: value }));
-    setTimeout(() => goNext(), 180);
+    setTimeout(() => goNext(), 220);
   };
   const toggleMulti = (id: string, value: string) =>
     setAnswers((a) => {
@@ -176,6 +214,31 @@ export default function BriefingForm({ template, whatsappNumber, whatsappMessage
       cur[i] = value;
       return { ...a, [id]: cur };
     });
+
+  // --------------------------------------------------------- Edit handlers
+  const patchQuestion = (id: string, patch: CustomizationPatch) =>
+    setCustomizations((c) => ({ ...c, [id]: { ...c[id], ...patch } }));
+
+  const removeQuestion = (id: string) => {
+    patchQuestion(id, { removed: true });
+    setEditingId(null);
+    // if we removed the current, stay at same index — useMemo will rebuild the array
+    // and current will shift to the next one. If we were at the last, step back.
+    setTimeout(() => {
+      setIndex((i) => {
+        const newTotal = questions.filter((q) => !(q.id === id) && !customizations[q.id]?.removed)
+          .length;
+        return Math.min(i, Math.max(0, newTotal - 1));
+      });
+    }, 0);
+  };
+
+  const addQuestion = (q: QuestionDef) => {
+    setCustomQuestions((qs) => [...qs, q]);
+    setShowAddPanel(false);
+    // jump to the newly added question
+    setTimeout(() => setIndex(questions.length), 0);
+  };
 
   // =====================================================
   // RENDER
@@ -207,6 +270,13 @@ export default function BriefingForm({ template, whatsappNumber, whatsappMessage
                 total={total}
                 answers={answers}
                 error={error}
+                editing={editingId === current.id}
+                onToggleEdit={() => setEditingId((id) => (id === current.id ? null : current.id))}
+                onPatch={(p) => patchQuestion(current.id, p)}
+                onRemove={() => removeQuestion(current.id)}
+                showAddPanel={showAddPanel}
+                onToggleAdd={() => setShowAddPanel((s) => !s)}
+                onAdd={addQuestion}
                 setText={setText}
                 setSingle={setSingle}
                 toggleMulti={toggleMulti}
@@ -241,10 +311,21 @@ export default function BriefingForm({ template, whatsappNumber, whatsappMessage
             <strong>{index + 1}</strong> de {total}
           </div>
           <div className="nav">
-            <button className="nav__btn" disabled={index === 0} onClick={goPrev} aria-label="Anterior">
+            <button
+              className="nav__btn"
+              disabled={index === 0}
+              onClick={goPrev}
+              aria-label="Anterior"
+              type="button"
+            >
               <ChevronUp />
             </button>
-            <button className="nav__btn" onClick={goNext} aria-label="Próxima">
+            <button
+              className="nav__btn"
+              onClick={goNext}
+              aria-label="Próxima"
+              type="button"
+            >
               <ChevronDown />
             </button>
           </div>
@@ -281,7 +362,7 @@ function Welcome({ intro, onStart }: { intro: any; onStart: () => void }) {
         </div>
       )}
       <div className="actions">
-        <button className="btn btn--primary btn--large" onClick={onStart} autoFocus>
+        <button className="btn btn--primary btn--large" onClick={onStart} autoFocus type="button">
           {intro?.buttonLabel ?? 'Começar'}
           <span className="btn__icon">
             <ArrowRight />
@@ -301,6 +382,13 @@ interface QuestionProps {
   total: number;
   answers: Answers;
   error: string | null;
+  editing: boolean;
+  onToggleEdit: () => void;
+  onPatch: (p: CustomizationPatch) => void;
+  onRemove: () => void;
+  showAddPanel: boolean;
+  onToggleAdd: () => void;
+  onAdd: (q: QuestionDef) => void;
   setText: (id: string, v: string) => void;
   setSingle: (id: string, v: string) => void;
   toggleMulti: (id: string, v: string) => void;
@@ -310,7 +398,26 @@ interface QuestionProps {
 }
 
 function Question(p: QuestionProps) {
-  const { q, index, total, answers, error, setText, setSingle, toggleMulti, toggleMultiBounded, setBrand, onNext } = p;
+  const {
+    q,
+    index,
+    total,
+    answers,
+    error,
+    editing,
+    onToggleEdit,
+    onPatch,
+    onRemove,
+    showAddPanel,
+    onToggleAdd,
+    onAdd,
+    setText,
+    setSingle,
+    toggleMulti,
+    toggleMultiBounded,
+    setBrand,
+    onNext,
+  } = p;
   const isLast = index === total - 1;
   const nextLabel = isLast ? 'Enviar respostas' : 'Próxima';
 
@@ -318,12 +425,29 @@ function Question(p: QuestionProps) {
     <>
       <div className="q__num">
         <ArrowRight /> Pergunta {index + 1}
+        <button
+          type="button"
+          className={`q__edit-toggle ${editing ? 'active' : ''}`}
+          onClick={onToggleEdit}
+        >
+          {editing ? 'Fechar edição' : 'Editar pergunta'}
+        </button>
       </div>
+
       <h2 className="q__title">
         {q.title}
         {q.required && <span style={{ color: 'var(--tb-color-error)' }}> *</span>}
       </h2>
       {q.hint && <p className="q__hint">{q.hint}</p>}
+
+      {editing && (
+        <QuestionEditPanel
+          q={q}
+          onPatch={onPatch}
+          onRemove={onRemove}
+          onClose={onToggleEdit}
+        />
+      )}
 
       <QuestionBody
         q={q}
@@ -338,7 +462,7 @@ function Question(p: QuestionProps) {
       <div className={`q__error ${error ? 'show' : ''}`}>{error}</div>
 
       <div className="actions">
-        <button className="btn btn--primary" onClick={onNext}>
+        <button className="btn btn--primary" onClick={onNext} type="button">
           {nextLabel}
           <span className="btn__icon">{isLast ? <Check /> : <ArrowRight />}</span>
         </button>
@@ -346,11 +470,160 @@ function Question(p: QuestionProps) {
           aperte <kbd>Enter</kbd>
         </span>
       </div>
+
+      <div className="q__customize">
+        <button type="button" className="q__add-toggle" onClick={onToggleAdd}>
+          {showAddPanel ? '× Cancelar nova pergunta' : '＋ Adicionar nova pergunta'}
+        </button>
+      </div>
+
+      {showAddPanel && <AddQuestionPanel onAdd={onAdd} />}
     </>
   );
 }
 
-function QuestionBody(p: Omit<QuestionProps, 'index' | 'total' | 'error' | 'onNext'>) {
+function QuestionEditPanel({
+  q,
+  onPatch,
+  onRemove,
+  onClose,
+}: {
+  q: QuestionDef;
+  onPatch: (p: CustomizationPatch) => void;
+  onRemove: () => void;
+  onClose: () => void;
+}) {
+  const [title, setTitle] = useState(q.title);
+  const [required, setRequired] = useState(q.required ?? true);
+
+  const apply = () => {
+    onPatch({ title: title.trim() || q.title, required });
+    onClose();
+  };
+
+  return (
+    <div className="q__edit-panel">
+      <div className="q__edit-row">
+        <label className="q__edit-label">Texto da pergunta</label>
+        <textarea
+          className="q__edit-input"
+          rows={2}
+          value={title}
+          data-skip-enter="true"
+          onChange={(e) => setTitle(e.target.value)}
+        />
+      </div>
+      <div className="q__edit-row q__edit-row--inline">
+        <label className="q__edit-toggle-line">
+          <input
+            type="checkbox"
+            checked={required}
+            onChange={(e) => setRequired(e.target.checked)}
+          />
+          <span>Obrigatória</span>
+        </label>
+        <div className="q__edit-actions">
+          <button type="button" className="q__edit-btn q__edit-btn--danger" onClick={onRemove}>
+            Remover pergunta
+          </button>
+          <button type="button" className="q__edit-btn q__edit-btn--primary" onClick={apply}>
+            Aplicar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AddQuestionPanel({ onAdd }: { onAdd: (q: QuestionDef) => void }) {
+  const [title, setTitle] = useState('');
+  const [type, setType] = useState<QuestionType>('textarea');
+  const [required, setRequired] = useState(false);
+  const [options, setOptions] = useState('');
+
+  const submit = () => {
+    if (!title.trim()) return;
+    const q: QuestionDef = {
+      id: newQuestionId(),
+      type,
+      title: title.trim(),
+      required,
+      options:
+        type === 'single' || type === 'multi'
+          ? options
+              .split('\n')
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : [],
+    };
+    onAdd(q);
+  };
+
+  return (
+    <div className="q__edit-panel q__edit-panel--add">
+      <div className="q__edit-row">
+        <label className="q__edit-label">Texto da nova pergunta</label>
+        <textarea
+          className="q__edit-input"
+          rows={2}
+          placeholder="Ex: Tem alguma referência adicional?"
+          value={title}
+          data-skip-enter="true"
+          onChange={(e) => setTitle(e.target.value)}
+          autoFocus
+        />
+      </div>
+      <div className="q__edit-row q__edit-row--inline">
+        <label className="q__edit-label" style={{ marginBottom: 0 }}>
+          Tipo
+          <select
+            value={type}
+            onChange={(e) => setType(e.target.value as QuestionType)}
+            className="q__edit-select"
+          >
+            <option value="textarea">Texto longo</option>
+            <option value="text">Texto curto</option>
+            <option value="single">Escolha única</option>
+            <option value="multi">Múltipla escolha</option>
+          </select>
+        </label>
+        <label className="q__edit-toggle-line">
+          <input
+            type="checkbox"
+            checked={required}
+            onChange={(e) => setRequired(e.target.checked)}
+          />
+          <span>Obrigatória</span>
+        </label>
+      </div>
+      {(type === 'single' || type === 'multi') && (
+        <div className="q__edit-row">
+          <label className="q__edit-label">Opções (uma por linha)</label>
+          <textarea
+            className="q__edit-input"
+            rows={3}
+            placeholder={'Opção 1\nOpção 2\nOpção 3'}
+            value={options}
+            data-skip-enter="true"
+            onChange={(e) => setOptions(e.target.value)}
+          />
+        </div>
+      )}
+      <div className="q__edit-actions" style={{ justifyContent: 'flex-end' }}>
+        <button
+          type="button"
+          className="q__edit-btn q__edit-btn--primary"
+          onClick={submit}
+          disabled={!title.trim()}
+        >
+          Adicionar
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function QuestionBody(p: Omit<QuestionProps, 'index' | 'total' | 'error' | 'onNext' | 'editing' | 'onToggleEdit' | 'onPatch' | 'onRemove' | 'showAddPanel' | 'onToggleAdd' | 'onAdd'>) {
   const { q, answers } = p;
   const value = answers[q.id];
 
@@ -387,6 +660,7 @@ function QuestionBody(p: Omit<QuestionProps, 'index' | 'total' | 'error' | 'onNe
           return (
             <button
               key={opt}
+              type="button"
               className={`choice ${sel ? 'selected' : ''}`}
               onClick={() => p.setSingle(q.id, opt)}
             >
@@ -413,6 +687,7 @@ function QuestionBody(p: Omit<QuestionProps, 'index' | 'total' | 'error' | 'onNe
           return (
             <button
               key={opt}
+              type="button"
               className={`choice ${sel ? 'selected' : ''}`}
               onClick={() => p.toggleMulti(q.id, opt)}
             >
@@ -486,6 +761,7 @@ function QuestionBody(p: Omit<QuestionProps, 'index' | 'total' | 'error' | 'onNe
             return (
               <button
                 key={opt}
+                type="button"
                 className={`choice ${sel ? 'selected' : ''} ${disabled ? 'disabled' : ''}`}
                 onClick={() => p.toggleMultiBounded(q.id, opt, max)}
               >
@@ -545,7 +821,7 @@ function Final({
           <polyline points="20 6 9 17 4 12" />
         </svg>
       </div>
-      <h1 className="final__title">Valeu, {nome}! 🎯</h1>
+      <h1 className="final__title">Valeu, {nome}!</h1>
       <p className="final__desc">
         Suas respostas chegaram aqui certinhas. Nossa equipe vai analisar tudo e em breve entra em contato com você pelo WhatsApp pra dar continuidade ao seu projeto.
       </p>
@@ -575,7 +851,7 @@ function ErrorView({ message, onRetry }: { message: string | null; onRetry: () =
         </p>
       )}
       <div className="actions" style={{ marginTop: 32 }}>
-        <button className="btn btn--primary" onClick={onRetry}>
+        <button className="btn btn--primary" onClick={onRetry} type="button">
           Tentar de novo
           <span className="btn__icon">
             <Retry />

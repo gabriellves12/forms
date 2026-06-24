@@ -207,6 +207,43 @@
 .admin-btn--primary:hover { background: var(--tb-color-primary-hover); }
 .admin-btn--danger { color: var(--tb-color-error); border-color: var(--tb-color-error); }
 
+/* Inline actions inside table rows */
+.row-actions { text-align: right; }
+.row-actions__group {
+  display: inline-flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+.row-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid var(--tb-border-subtle);
+  background: #fff;
+  color: var(--tb-text-secondary);
+  letter-spacing: 0.04em;
+  transition: all 150ms ease;
+  min-width: 52px;
+}
+.row-action:hover:not(:disabled) {
+  background: var(--tb-neutral-50);
+  color: var(--tb-text-primary);
+  border-color: var(--tb-border-strong);
+}
+.row-action:disabled { opacity: 0.45; cursor: not-allowed; }
+.row-action--danger { color: var(--tb-color-error); border-color: rgba(220, 38, 38, 0.25); }
+.row-action--danger:hover:not(:disabled) {
+  background: #FEF2F2;
+  color: var(--tb-color-error);
+  border-color: var(--tb-color-error);
+}
+
+.admin-empty { display: flex; flex-direction: column; align-items: center; }
+
 /* Login */
 .login-shell {
   min-height: 100vh;
