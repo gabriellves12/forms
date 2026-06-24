@@ -25,28 +25,24 @@ export default async function BriefingDetailPage({ params }: { params: { id: str
 
   if (!briefing) notFound();
 
-  const { data: category } = await supabase
-    .from('categories')
-    .select('name, slug')
-    .eq('id', briefing.category_id)
-    .maybeSingle();
+  const [categoryRes, questionsRes, answersRes] = await Promise.all([
+    supabase.from('categories').select('name, slug').eq('id', briefing.category_id).maybeSingle(),
+    briefing.template_id
+      ? supabase
+          .from('template_questions')
+          .select('question_key, title, position')
+          .eq('template_id', briefing.template_id)
+          .order('position')
+      : Promise.resolve({ data: [] as { question_key: string; title: string; position: number }[] }),
+    supabase
+      .from('briefing_answers')
+      .select('question_key, question_title, value')
+      .eq('briefing_id', briefing.id),
+  ]);
 
-  // Tenta carregar perguntas do template original; se já foi removido,
-  // fallback pra raw_payload.
-  let questions: { question_key: string; title: string; position: number }[] = [];
-  if (briefing.template_id) {
-    const { data } = await supabase
-      .from('template_questions')
-      .select('question_key, title, position')
-      .eq('template_id', briefing.template_id)
-      .order('position');
-    questions = data ?? [];
-  }
-
-  const { data: answers } = await supabase
-    .from('briefing_answers')
-    .select('question_key, question_title, value')
-    .eq('briefing_id', briefing.id);
+  const category = categoryRes.data;
+  const questions = (questionsRes.data ?? []) as { question_key: string; title: string; position: number }[];
+  const answers = answersRes.data;
 
   const answerMap = new Map<string, { title: string; value: string }>();
   for (const a of answers ?? []) {

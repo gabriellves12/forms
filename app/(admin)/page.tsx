@@ -19,75 +19,65 @@ const STATUS_FILTERS: { key: string; label: string }[] = [
   { key: 'archived', label: 'Arquivados' },
 ];
 
+type StatusBucket = { all: number; in_progress: number; new: number; seen: number; archived: number };
+const EMPTY_BUCKET = (): StatusBucket => ({ all: 0, in_progress: 0, new: 0, seen: 0, archived: 0 });
+
 export default async function AdminHome({ searchParams }: { searchParams: SearchParams }) {
   const supabase = createServerSupabase();
 
-  const { data: cats } = await supabase
-    .from('categories')
-    .select('id, slug, name')
-    .order('position');
-
-  const counts: Record<string, number> = {};
-  for (const c of cats ?? []) {
-    const { count } = await supabase
-      .from('briefings')
-      .select('id', { count: 'exact', head: true })
-      .eq('category_id', c.id);
-    counts[c.slug] = count ?? 0;
+  const [catsRes, allBriefingsRes] = await Promise.all([
+    supabase.from('categories').select('id, slug, name').order('position'),
+    supabase.from('briefings').select('category_id, status'),
+  ]);
+  const cats = catsRes.data ?? [];
+  const bucketsByCatId = new Map<string, StatusBucket>();
+  for (const c of cats) bucketsByCatId.set(c.id, EMPTY_BUCKET());
+  for (const row of (allBriefingsRes.data ?? []) as { category_id: string; status: string }[]) {
+    const bucket = bucketsByCatId.get(row.category_id);
+    if (!bucket) continue;
+    bucket.all++;
+    if (row.status in bucket) bucket[row.status as keyof StatusBucket]++;
   }
+  const counts: Record<string, number> = {};
+  for (const c of cats) counts[c.slug] = bucketsByCatId.get(c.id)?.all ?? 0;
 
-  const activeSlug = searchParams.cat ?? cats?.[0]?.slug ?? '';
-  const activeCat = cats?.find((c) => c.slug === activeSlug);
+  const activeSlug = searchParams.cat ?? cats[0]?.slug ?? '';
+  const activeCat = cats.find((c) => c.slug === activeSlug);
   const activeStatus = searchParams.status ?? 'all';
 
   let briefings: any[] = [];
   let templateId: string | null = null;
   let templateQuestions: QuestionCardData[] = [];
-  const statusCounts: Record<string, number> = {
-    all: 0,
-    in_progress: 0,
-    new: 0,
-    seen: 0,
-    archived: 0,
-  };
+  const statusCounts: StatusBucket = activeCat
+    ? bucketsByCatId.get(activeCat.id) ?? EMPTY_BUCKET()
+    : EMPTY_BUCKET();
 
   if (activeCat) {
-    const { data: allInCat } = await supabase
-      .from('briefings')
-      .select('status')
-      .eq('category_id', activeCat.id);
-    for (const row of allInCat ?? []) {
-      const s = (row as { status: string }).status;
-      statusCounts.all++;
-      if (statusCounts[s] != null) statusCounts[s]++;
-    }
-
-    let q = supabase
+    let listQuery = supabase
       .from('briefings')
       .select('id, client_name, product_name, status, submitted_at')
       .eq('category_id', activeCat.id)
       .order('submitted_at', { ascending: false })
       .limit(200);
+    if (activeStatus !== 'all') listQuery = listQuery.eq('status', activeStatus);
 
-    if (activeStatus !== 'all') {
-      q = q.eq('status', activeStatus);
-    }
-    const { data } = await q;
-    briefings = data ?? [];
+    const [briefingsRes, tmplRes] = await Promise.all([
+      listQuery,
+      supabase
+        .from('form_templates')
+        .select('id')
+        .eq('category_id', activeCat.id)
+        .eq('is_active', true)
+        .maybeSingle(),
+    ]);
+    briefings = briefingsRes.data ?? [];
 
-    const { data: tmpl } = await supabase
-      .from('form_templates')
-      .select('id')
-      .eq('category_id', activeCat.id)
-      .eq('is_active', true)
-      .maybeSingle();
-
-    if (tmpl) {
-      templateId = tmpl.id;
+    if (tmplRes.data) {
+      templateId = tmplRes.data.id;
       const { data: tq } = await supabase
         .from('template_questions')
         .select('question_key, position, type, title, hint, placeholder, options, required, config')
-        .eq('template_id', tmpl.id)
+        .eq('template_id', templateId)
         .order('position', { ascending: true });
       templateQuestions = (tq ?? []).map((r: any) => ({
         question_key: r.question_key,
@@ -129,7 +119,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Search
       </header>
 
       <div className="admin-tabs">
-        {(cats ?? []).map((c) => (
+        {cats.map((c) => (
           <Link
             key={c.slug}
             href={buildHref(c.slug, 'all')}
@@ -144,7 +134,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Search
       {activeCat && statusCounts.all > 0 && (
         <div className="admin-filters">
           {STATUS_FILTERS.map((f) => {
-            const n = statusCounts[f.key] ?? 0;
+            const n = statusCounts[f.key as keyof StatusBucket] ?? 0;
             if (f.key !== 'all' && n === 0) return null;
             return (
               <Link

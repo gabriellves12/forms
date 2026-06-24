@@ -5,29 +5,34 @@ export const dynamic = 'force-dynamic';
 
 export default async function TemplatesPage() {
   const supabase = createServerSupabase();
-  const { data: cats } = await supabase
-    .from('categories')
-    .select('id, slug, name')
-    .order('position');
 
-  const rows: any[] = [];
-  for (const c of cats ?? []) {
-    const { data: t } = await supabase
+  const [catsRes, templatesRes] = await Promise.all([
+    supabase.from('categories').select('id, slug, name').order('position'),
+    supabase
       .from('form_templates')
-      .select('id, version, updated_at')
-      .eq('category_id', c.id)
-      .eq('is_active', true)
-      .maybeSingle();
-    let count = 0;
-    if (t) {
-      const { count: qc } = await supabase
-        .from('template_questions')
-        .select('id', { count: 'exact', head: true })
-        .eq('template_id', t.id);
-      count = qc ?? 0;
+      .select('id, category_id, version, updated_at')
+      .eq('is_active', true),
+  ]);
+  const cats = catsRes.data ?? [];
+  const templates = (templatesRes.data ?? []) as { id: string; category_id: string; version: number; updated_at: string }[];
+  const templateByCatId = new Map(templates.map((t) => [t.category_id, t]));
+
+  const templateIds = templates.map((t) => t.id);
+  const countsByTemplate = new Map<string, number>();
+  if (templateIds.length > 0) {
+    const { data: tq } = await supabase
+      .from('template_questions')
+      .select('template_id')
+      .in('template_id', templateIds);
+    for (const row of (tq ?? []) as { template_id: string }[]) {
+      countsByTemplate.set(row.template_id, (countsByTemplate.get(row.template_id) ?? 0) + 1);
     }
-    rows.push({ ...c, template: t, count });
   }
+
+  const rows = cats.map((c) => {
+    const t = templateByCatId.get(c.id);
+    return { ...c, template: t, count: t ? countsByTemplate.get(t.id) ?? 0 : 0 };
+  });
 
   return (
     <>
