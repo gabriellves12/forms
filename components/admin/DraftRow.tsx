@@ -45,11 +45,11 @@ export default function DraftRow({ d }: { d: DraftRowData }) {
   };
 
   const onRowClick = () => {
-    window.open(fullUrl, '_blank', 'noopener,noreferrer');
+    router.push(`/drafts/${d.id}`);
   };
 
   return (
-    <tr onClick={onRowClick} title="Abrir formulário do cliente em nova aba">
+    <tr onClick={onRowClick} title="Ver detalhes do briefing aguardando">
       <td>{d.client_label || <span style={muted}>—</span>}</td>
       <td><span style={muted}>—</span></td>
       <td>
