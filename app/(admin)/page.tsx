@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { createServerSupabase } from '@/lib/supabase/server';
 import BriefingRow from '@/components/admin/BriefingRow';
+import DraftRow, { type DraftRowData } from '@/components/admin/DraftRow';
 import NewBriefingButton from '@/components/admin/NewBriefingButton';
 import type { QuestionCardData } from '@/components/admin/QuestionCard';
 
@@ -13,31 +14,69 @@ interface SearchParams {
 
 const STATUS_FILTERS: { key: string; label: string }[] = [
   { key: 'all', label: 'Todos' },
+  { key: 'waiting', label: 'Aguardando' },
   { key: 'in_progress', label: 'Em andamento' },
   { key: 'new', label: 'Novos' },
   { key: 'seen', label: 'Vistos' },
   { key: 'archived', label: 'Arquivados' },
 ];
 
-type StatusBucket = { all: number; in_progress: number; new: number; seen: number; archived: number };
-const EMPTY_BUCKET = (): StatusBucket => ({ all: 0, in_progress: 0, new: 0, seen: 0, archived: 0 });
+type StatusBucket = {
+  all: number;
+  waiting: number;
+  in_progress: number;
+  new: number;
+  seen: number;
+  archived: number;
+};
+const EMPTY_BUCKET = (): StatusBucket => ({
+  all: 0,
+  waiting: 0,
+  in_progress: 0,
+  new: 0,
+  seen: 0,
+  archived: 0,
+});
+
+type MergedRow =
+  | { kind: 'briefing'; date: string; data: any }
+  | { kind: 'draft'; date: string; data: DraftRowData };
 
 export default async function AdminHome({ searchParams }: { searchParams: SearchParams }) {
   const supabase = createServerSupabase();
 
-  const [catsRes, allBriefingsRes] = await Promise.all([
+  const [catsRes, allBriefingsRes, allDraftsRes] = await Promise.all([
     supabase.from('categories').select('id, slug, name').order('position'),
-    supabase.from('briefings').select('category_id, status'),
+    supabase.from('briefings').select('category_id, status, draft_id'),
+    supabase.from('briefing_drafts').select('id, category_id'),
   ]);
   const cats = catsRes.data ?? [];
+  const allBriefings = (allBriefingsRes.data ?? []) as {
+    category_id: string;
+    status: string;
+    draft_id: string | null;
+  }[];
+  const allDrafts = (allDraftsRes.data ?? []) as { id: string; category_id: string }[];
+
+  const usedDraftIds = new Set<string>();
+  for (const b of allBriefings) if (b.draft_id) usedDraftIds.add(b.draft_id);
+
   const bucketsByCatId = new Map<string, StatusBucket>();
   for (const c of cats) bucketsByCatId.set(c.id, EMPTY_BUCKET());
-  for (const row of (allBriefingsRes.data ?? []) as { category_id: string; status: string }[]) {
+  for (const row of allBriefings) {
     const bucket = bucketsByCatId.get(row.category_id);
     if (!bucket) continue;
     bucket.all++;
     if (row.status in bucket) bucket[row.status as keyof StatusBucket]++;
   }
+  for (const d of allDrafts) {
+    if (usedDraftIds.has(d.id)) continue;
+    const bucket = bucketsByCatId.get(d.category_id);
+    if (!bucket) continue;
+    bucket.all++;
+    bucket.waiting++;
+  }
+
   const counts: Record<string, number> = {};
   for (const c of cats) counts[c.slug] = bucketsByCatId.get(c.id)?.all ?? 0;
 
@@ -46,6 +85,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Search
   const activeStatus = searchParams.status ?? 'all';
 
   let briefings: any[] = [];
+  let drafts: DraftRowData[] = [];
   let templateId: string | null = null;
   let templateQuestions: QuestionCardData[] = [];
   const statusCounts: StatusBucket = activeCat
@@ -59,10 +99,23 @@ export default async function AdminHome({ searchParams }: { searchParams: Search
       .eq('category_id', activeCat.id)
       .order('submitted_at', { ascending: false })
       .limit(200);
-    if (activeStatus !== 'all') listQuery = listQuery.eq('status', activeStatus);
+    if (activeStatus !== 'all' && activeStatus !== 'waiting') {
+      listQuery = listQuery.eq('status', activeStatus);
+    }
 
-    const [briefingsRes, tmplRes] = await Promise.all([
-      listQuery,
+    let draftsQuery = supabase
+      .from('briefing_drafts')
+      .select('id, client_label, share_slug, share_token, created_at')
+      .eq('category_id', activeCat.id)
+      .order('created_at', { ascending: false })
+      .limit(200);
+
+    const [briefingsRes, draftsRes, tmplRes] = await Promise.all([
+      // Filter waiting → no briefings rows
+      activeStatus === 'waiting'
+        ? Promise.resolve({ data: [] as any[] })
+        : listQuery,
+      draftsQuery,
       supabase
         .from('form_templates')
         .select('id')
@@ -71,6 +124,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Search
         .maybeSingle(),
     ]);
     briefings = briefingsRes.data ?? [];
+    drafts = (draftsRes.data ?? []).filter((d: any) => !usedDraftIds.has(d.id)) as DraftRowData[];
 
     if (tmplRes.data) {
       templateId = tmplRes.data.id;
@@ -92,6 +146,18 @@ export default async function AdminHome({ searchParams }: { searchParams: Search
       }));
     }
   }
+
+  const showBriefings = activeStatus !== 'waiting';
+  const showDrafts = activeStatus === 'all' || activeStatus === 'waiting';
+
+  const merged: MergedRow[] = [];
+  if (showBriefings) {
+    for (const b of briefings) merged.push({ kind: 'briefing', date: b.submitted_at, data: b });
+  }
+  if (showDrafts) {
+    for (const d of drafts) merged.push({ kind: 'draft', date: d.created_at, data: d });
+  }
+  merged.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 
   const buildHref = (cat: string, status: string) => {
     const sp = new URLSearchParams();
@@ -153,7 +219,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Search
         </div>
       )}
 
-      {briefings.length === 0 ? (
+      {merged.length === 0 ? (
         <div className="admin-empty">
           <div className="admin-empty__icon" aria-hidden>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -197,9 +263,13 @@ export default async function AdminHome({ searchParams }: { searchParams: Search
             </tr>
           </thead>
           <tbody>
-            {briefings.map((b) => (
-              <BriefingRow key={b.id} b={b} />
-            ))}
+            {merged.map((row) =>
+              row.kind === 'briefing' ? (
+                <BriefingRow key={`b-${row.data.id}`} b={row.data} />
+              ) : (
+                <DraftRow key={`d-${row.data.id}`} d={row.data} />
+              )
+            )}
           </tbody>
         </table>
       )}

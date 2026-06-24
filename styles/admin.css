@@ -212,6 +212,7 @@
 .status-dot--new { background: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.12); }
 .status-dot--seen { background: var(--tb-neutral-400); box-shadow: 0 0 0 3px rgba(0,0,0,0.05); }
 .status-dot--archived { background: var(--tb-neutral-300); box-shadow: 0 0 0 3px rgba(0,0,0,0.05); }
+.status-dot--waiting { background: #3B82F6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
 .status-dot--in_progress {
   background: #f59e0b;
   box-shadow: 0 0 0 3px rgba(245,158,11,0.18);
@@ -284,6 +285,7 @@
 .admin-badge--seen { background: var(--tb-neutral-100); color: var(--tb-text-secondary); }
 .admin-badge--archived { background: var(--tb-neutral-200); color: var(--tb-text-secondary); }
 .admin-badge--in_progress { background: #FEF3C7; color: #92400E; }
+.admin-badge--waiting { background: #DBEAFE; color: #1E40AF; }
 
 .admin-actions {
   display: flex;
