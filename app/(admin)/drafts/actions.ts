@@ -8,6 +8,24 @@ function randomToken() {
   return randomBytes(16).toString('base64url');
 }
 
+// O upsert de briefing_answers usa (briefing_id, question_key) como conflict target.
+// Se o draft tiver question_key vazio ou duplicado, a submissão do cliente quebra
+// com "ON CONFLICT DO UPDATE command cannot affect row a second time".
+function validateQuestionKeys(questions: { question_key: string }[]): string | null {
+  const seen = new Set<string>();
+  const dupes: string[] = [];
+  for (const q of questions) {
+    const key = (q.question_key ?? '').trim();
+    if (!key) return 'Há pergunta sem identificador (question_key).';
+    if (seen.has(key)) dupes.push(key);
+    seen.add(key);
+  }
+  if (dupes.length > 0) {
+    return `Identificadores de pergunta duplicados: ${Array.from(new Set(dupes)).join(', ')}.`;
+  }
+  return null;
+}
+
 function padN(n: number) {
   return n < 100 ? String(n).padStart(2, '0') : String(n);
 }
@@ -55,6 +73,8 @@ export async function createBriefingDraft(input: {
   if (!input.questions || input.questions.length === 0) {
     return { success: false, error: 'O briefing precisa ter pelo menos uma pergunta.' };
   }
+  const keyErr = validateQuestionKeys(input.questions);
+  if (keyErr) return { success: false, error: keyErr };
 
   const token = randomToken();
   const basePayload = {
@@ -147,6 +167,8 @@ export async function updateBriefingDraft(input: {
   if (!input.questions || input.questions.length === 0) {
     return { success: false, error: 'O briefing precisa ter pelo menos uma pergunta.' };
   }
+  const keyErr = validateQuestionKeys(input.questions);
+  if (keyErr) return { success: false, error: keyErr };
 
   const { error } = await supabase
     .from('briefing_drafts')

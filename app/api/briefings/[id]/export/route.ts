@@ -26,31 +26,51 @@ export async function GET(
   const { data: briefing } = await supabase
     .from('briefings')
     .select(
-      'id, client_name, product_name, status, submitted_at, source, category_id, template_id'
+      'id, client_name, product_name, status, submitted_at, source, category_id, template_id, draft_id'
     )
     .eq('id', params.id)
     .maybeSingle();
 
   if (!briefing) return new NextResponse('Not found', { status: 404 });
 
-  const [{ data: category }, { data: answers }, { data: questions }] =
+  // Ordena pelo snapshot do draft (o que foi de fato enviado) quando houver;
+  // senão pelas posições do template original.
+  const [{ data: category }, { data: answers }, { data: draft }, { data: questions }] =
     await Promise.all([
       supabase.from('categories').select('slug, name').eq('id', briefing.category_id).maybeSingle(),
       supabase
         .from('briefing_answers')
         .select('question_key, question_title, value')
         .eq('briefing_id', briefing.id),
-      briefing.template_id
+      briefing.draft_id
+        ? supabase
+            .from('briefing_drafts')
+            .select('questions')
+            .eq('id', briefing.draft_id)
+            .maybeSingle()
+        : Promise.resolve({ data: null as { questions: unknown } | null }),
+      briefing.template_id && !briefing.draft_id
         ? supabase
             .from('template_questions')
             .select('question_key, position')
             .eq('template_id', briefing.template_id)
             .order('position')
-        : Promise.resolve({ data: [] as any[] }),
+        : Promise.resolve({ data: [] as { question_key: string; position: number }[] }),
     ]);
 
   const orderMap = new Map<string, number>();
-  for (const q of questions ?? []) orderMap.set(q.question_key, q.position);
+  const draftQuestions = Array.isArray((draft as { questions: unknown } | null)?.questions)
+    ? ((draft as { questions: any[] }).questions)
+    : [];
+  if (draftQuestions.length > 0) {
+    draftQuestions.forEach((q: any, i: number) => {
+      if (typeof q?.question_key === 'string' && q.question_key) {
+        orderMap.set(q.question_key, i);
+      }
+    });
+  } else {
+    for (const q of questions ?? []) orderMap.set(q.question_key, q.position);
+  }
 
   const sortedAnswers = (answers ?? []).slice().sort((a, b) => {
     const pa = orderMap.get(a.question_key) ?? 999;

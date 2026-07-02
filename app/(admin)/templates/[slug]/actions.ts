@@ -24,6 +24,25 @@ export async function saveTemplate(input: {
 }): Promise<{ success: boolean; error?: string }> {
   const supabase = createServerSupabase();
 
+  // Bloqueia duplicatas de question_key: o upsert (template_id, question_key) é único,
+  // e perguntas duplicadas quebram a submissão do briefing (Postgres ON CONFLICT em batch).
+  const seen = new Set<string>();
+  const duplicates: string[] = [];
+  for (const q of input.questions) {
+    const key = (q.question_key ?? '').trim();
+    if (!key) {
+      return { success: false, error: 'Há pergunta sem identificador (question_key).' };
+    }
+    if (seen.has(key)) duplicates.push(key);
+    seen.add(key);
+  }
+  if (duplicates.length > 0) {
+    return {
+      success: false,
+      error: `Identificadores de pergunta duplicados: ${Array.from(new Set(duplicates)).join(', ')}.`,
+    };
+  }
+
   // 1. Atualiza intro
   const { error: introErr } = await supabase
     .from('form_templates')

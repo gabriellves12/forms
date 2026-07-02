@@ -34,6 +34,15 @@ function toRawPayload(answers: AnswerInput[]): Record<string, string> {
   return out;
 }
 
+// Garante uma resposta por questionKey antes de enviar ao upsert.
+// O Postgres aborta INSERT ... ON CONFLICT DO UPDATE se o batch contém duas linhas
+// que conflitam com a mesma linha-alvo (erro: "cannot affect row a second time").
+function dedupeAnswers<T extends { questionKey: string }>(answers: T[]): T[] {
+  const map = new Map<string, T>();
+  for (const a of answers) map.set(a.questionKey, a);
+  return Array.from(map.values());
+}
+
 // Autosave parcial: chamado enquanto o cliente preenche um briefing gerado por draft.
 // Cria a linha em `briefings` na primeira chamada (status='in_progress') e atualiza nas seguintes.
 export async function saveBriefingProgress(
@@ -44,7 +53,8 @@ export async function saveBriefingProgress(
   }
 
   const supabase = createAdminSupabase();
-  const rawPayload = toRawPayload(input.answers);
+  const answers = dedupeAnswers(input.answers);
+  const rawPayload = toRawPayload(answers);
 
   let briefingId = input.briefingId;
 
@@ -85,7 +95,7 @@ export async function saveBriefingProgress(
     briefingId = data.id;
   }
 
-  const rows = input.answers
+  const rows = answers
     .filter((a) => (a.value ?? '').trim() !== '')
     .map((a) => ({
       briefing_id: briefingId!,
@@ -127,7 +137,8 @@ export async function submitBriefing(
   }
 
   const supabase = createAdminSupabase();
-  const rawPayload = toRawPayload(input.answers);
+  const answers = dedupeAnswers(input.answers);
+  const rawPayload = toRawPayload(answers);
 
   let briefingId = input.inProgressBriefingId ?? null;
 
@@ -173,7 +184,7 @@ export async function submitBriefing(
     briefingId = briefing.id;
   }
 
-  const rows = input.answers.map((a) => ({
+  const rows = answers.map((a) => ({
     briefing_id: briefingId!,
     question_key: a.questionKey,
     question_title: a.questionTitle,

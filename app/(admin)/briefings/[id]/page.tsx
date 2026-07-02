@@ -18,16 +18,26 @@ export default async function BriefingDetailPage({ params }: { params: { id: str
   const { data: briefing } = await supabase
     .from('briefings')
     .select(
-      'id, client_name, product_name, status, submitted_at, raw_payload, category_id, template_id'
+      'id, client_name, product_name, status, submitted_at, raw_payload, category_id, template_id, draft_id'
     )
     .eq('id', params.id)
     .maybeSingle();
 
   if (!briefing) notFound();
 
-  const [categoryRes, questionsRes, answersRes] = await Promise.all([
+  // Briefings originados de draft devem listar APENAS as perguntas que estavam no
+  // snapshot enviado ao cliente — o template pode ter perguntas a mais que foram
+  // removidas no draft. Briefings sem draft caem de volta no template.
+  const [categoryRes, draftRes, templateQuestionsRes, answersRes] = await Promise.all([
     supabase.from('categories').select('name, slug').eq('id', briefing.category_id).maybeSingle(),
-    briefing.template_id
+    briefing.draft_id
+      ? supabase
+          .from('briefing_drafts')
+          .select('questions')
+          .eq('id', briefing.draft_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null as { questions: unknown } | null }),
+    briefing.template_id && !briefing.draft_id
       ? supabase
           .from('template_questions')
           .select('question_key, title, position')
@@ -41,7 +51,6 @@ export default async function BriefingDetailPage({ params }: { params: { id: str
   ]);
 
   const category = categoryRes.data;
-  const questions = (questionsRes.data ?? []) as { question_key: string; title: string; position: number }[];
   const answers = answersRes.data;
 
   const answerMap = new Map<string, { title: string; value: string }>();
@@ -49,11 +58,30 @@ export default async function BriefingDetailPage({ params }: { params: { id: str
     answerMap.set(a.question_key, { title: a.question_title || '', value: a.value || '' });
   }
 
-  // ordena pela posição do template; fallback alphabetical
+  const draftQuestions = (() => {
+    const raw = (draftRes.data as { questions: unknown } | null)?.questions;
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .map((q: any) => ({
+        key: typeof q?.question_key === 'string' ? q.question_key : '',
+        title: typeof q?.title === 'string' ? q.title : '',
+      }))
+      .filter((q) => q.key);
+  })();
+
+  const templateQuestions = (templateQuestionsRes.data ?? []) as {
+    question_key: string;
+    title: string;
+    position: number;
+  }[];
+
+  // Prioridade: snapshot do draft > template > chaves vindas das respostas.
   const orderedKeys =
-    questions.length > 0
-      ? questions.map((q) => ({ key: q.question_key, title: q.title }))
-      : Array.from(answerMap.entries()).map(([key, v]) => ({ key, title: v.title }));
+    draftQuestions.length > 0
+      ? draftQuestions
+      : templateQuestions.length > 0
+        ? templateQuestions.map((q) => ({ key: q.question_key, title: q.title }))
+        : Array.from(answerMap.entries()).map(([key, v]) => ({ key, title: v.title }));
 
   // Auto-marca como visto (apenas para briefings finalizados ainda 'new')
   if (briefing.status === 'new') {
