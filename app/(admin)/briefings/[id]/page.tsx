@@ -76,12 +76,22 @@ export default async function BriefingDetailPage({ params }: { params: { id: str
   }[];
 
   // Prioridade: snapshot do draft > template > chaves vindas das respostas.
-  const orderedKeys =
+  const baseKeys =
     draftQuestions.length > 0
       ? draftQuestions
       : templateQuestions.length > 0
         ? templateQuestions.map((q) => ({ key: q.question_key, title: q.title }))
         : Array.from(answerMap.entries()).map(([key, v]) => ({ key, title: v.title }));
+
+  // Respostas que existem no banco mas não estão no snapshot atual (o draft/template
+  // foi editado depois da submissão e algumas perguntas foram removidas). Preservamos
+  // essas respostas listando-as ao final para que nada preenchido pelo cliente suma.
+  const baseKeySet = new Set(baseKeys.map((k) => k.key));
+  const orphanKeys = Array.from(answerMap.entries())
+    .filter(([key, v]) => !baseKeySet.has(key) && (v.value ?? '').trim() !== '')
+    .map(([key, v]) => ({ key, title: v.title }));
+
+  const orderedKeys = [...baseKeys, ...orphanKeys];
 
   // Auto-marca como visto (apenas para briefings finalizados ainda 'new')
   if (briefing.status === 'new') {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { deleteBriefingInline } from '@/app/(admin)/actions';
 
 const STATUS_LABEL: Record<string, string> = {
@@ -17,14 +17,38 @@ export interface BriefingRowData {
   product_name: string | null;
   status: string;
   submitted_at: string;
+  // Briefings originados de draft trazem o link compartilhável junto
+  // pra o admin re-copiar sem precisar voltar pra tela de drafts.
+  share_slug?: string | null;
+  share_token?: string | null;
 }
 
 export default function BriefingRow({ b }: { b: BriefingRowData }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [copied, setCopied] = useState(false);
   const muted = { color: 'var(--tb-text-muted)' };
 
   const stop = (e: React.MouseEvent) => e.stopPropagation();
+
+  const sharePath = b.share_slug
+    ? `/${b.share_slug}`
+    : b.share_token
+      ? `/b/${b.share_token}`
+      : null;
+
+  const onCopyLink = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!sharePath) return;
+    const fullUrl = `${window.location.origin}${sharePath}`;
+    try {
+      await navigator.clipboard.writeText(fullUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      // ignore
+    }
+  };
 
   const onExportJSON = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -59,6 +83,17 @@ export default function BriefingRow({ b }: { b: BriefingRowData }) {
       <td>{new Date(b.submitted_at).toLocaleString('pt-BR')}</td>
       <td className="row-actions" onClick={stop}>
         <div className="row-actions__group">
+          {sharePath && (
+            <button
+              type="button"
+              className="row-action"
+              onClick={onCopyLink}
+              title="Copiar link do cliente"
+              aria-label="Copiar link"
+            >
+              {copied ? 'Copiado!' : 'Copiar link'}
+            </button>
+          )}
           <button
             type="button"
             className="row-action"

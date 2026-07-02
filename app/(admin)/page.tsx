@@ -95,7 +95,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Search
   if (activeCat) {
     let listQuery = supabase
       .from('briefings')
-      .select('id, client_name, product_name, status, submitted_at')
+      .select('id, client_name, product_name, status, submitted_at, draft_id')
       .eq('category_id', activeCat.id)
       .order('submitted_at', { ascending: false })
       .limit(200);
@@ -123,7 +123,38 @@ export default async function AdminHome({ searchParams }: { searchParams: Search
         .eq('is_active', true)
         .maybeSingle(),
     ]);
-    briefings = briefingsRes.data ?? [];
+    const rawBriefings = (briefingsRes.data ?? []) as {
+      id: string;
+      client_name: string | null;
+      product_name: string | null;
+      status: string;
+      submitted_at: string;
+      draft_id: string | null;
+    }[];
+    // Anexa share_slug/share_token do draft para que a row possa copiar o link.
+    const draftIdsInList = rawBriefings.map((b) => b.draft_id).filter(Boolean) as string[];
+    const draftShareMap = new Map<string, { share_slug: string | null; share_token: string }>();
+    if (draftIdsInList.length > 0) {
+      const { data: shareRows } = await supabase
+        .from('briefing_drafts')
+        .select('id, share_slug, share_token')
+        .in('id', draftIdsInList);
+      for (const r of shareRows ?? []) {
+        draftShareMap.set(r.id, { share_slug: r.share_slug, share_token: r.share_token });
+      }
+    }
+    briefings = rawBriefings.map((b) => {
+      const share = b.draft_id ? draftShareMap.get(b.draft_id) : undefined;
+      return {
+        id: b.id,
+        client_name: b.client_name,
+        product_name: b.product_name,
+        status: b.status,
+        submitted_at: b.submitted_at,
+        share_slug: share?.share_slug ?? null,
+        share_token: share?.share_token ?? null,
+      };
+    });
     drafts = (draftsRes.data ?? []).filter((d: any) => !usedDraftIds.has(d.id)) as DraftRowData[];
 
     if (tmplRes.data) {
