@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { redirect } from 'next/navigation';
 import { createServerSupabase } from '@/lib/supabase/server';
 import Sidebar from '@/components/admin/Sidebar';
 import '@/styles/admin.css';
@@ -9,9 +10,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const supabase = createServerSupabase();
   const { data } = await supabase.auth.getUser();
 
-  // /admin/login renderiza sem shell — usa este layout só pra estilos globais
+  // Middleware gates by cookie presence only — cookies expirados chegam aqui.
+  // Validação real do token acontece aqui via getUser().
   if (!data.user) {
-    return <>{children}</>;
+    redirect('/login');
   }
 
   return (
