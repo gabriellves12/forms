@@ -1,4 +1,5 @@
-import { NextResponse, type NextRequest } from 'next/server';
+import { NextResponse } from 'next/dist/server/web/spec-extension/response';
+import type { NextRequest } from 'next/dist/server/web/spec-extension/request';
 
 function hasSupabaseSession(request: NextRequest): boolean {
   for (const cookie of request.cookies.getAll()) {
